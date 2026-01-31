@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ویرایشگر مانگا - نسخه نهایی هوشمند</title>
+    <title>ویرایشگر مانگا - نسخه فوق سریع</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -57,9 +57,9 @@
         }
 
         #style-menu {
-            position: absolute; background: rgba(15, 15, 15, 0.95); border: 2px solid #007bff; border-radius: 12px;
-            display: none; flex-direction: column; width: 240px; padding: 10px; z-index: 9999;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.8); direction: rtl;
+            position: fixed; background: rgba(15, 15, 15, 0.98); border: 2px solid #007bff; border-radius: 12px;
+            display: none; flex-direction: column; width: 240px; padding: 10px; z-index: 99999;
+            box-shadow: 0 5px 35px rgba(0,0,0,1); direction: rtl;
         }
         
         .menu-section { color: #007bff; font-size: 10px; margin: 5px 0; border-bottom: 1px solid #333; font-weight: bold; }
@@ -69,9 +69,34 @@
         #customColor, #strokeColor { width: 25px; height: 25px; border: none; cursor: pointer; }
         .btn-action { background: #28a745; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
         .hidden-panel { display: none !important; }
+        
+        .focus-active #topUI { opacity: 0.5; filter: grayscale(1); }
+        .focus-active #cleanWrapper { flex: 100%; } 
+
+        /* --- بخش جدید استایل دایره‌های تنظیم خط --- */
+        #line-selector-ui {
+            position: fixed; display: none; gap: 8px; z-index: 100000; align-items: center; direction: ltr;
+        }
+        .line-circle {
+            width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #000;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            cursor: pointer; border: 2px solid #007bff; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            font-size: 14px; transition: 0.2s;
+        }
+        .line-circle:hover { transform: scale(1.1); background: #007bff; color: white; }
+        .line-circle.active { background: #007bff; color: white; }
+        .line-next-btn {
+            width: 24px; height: 24px; border-radius: 50%; background: #333; color: white;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
     </style>
 </head>
 <body onload="checkLoginState()">
+
+<div id="line-selector-ui">
+    <div id="circle-container" style="display: flex; gap: 5px;"></div>
+    <div class="line-next-btn" onclick="toggleLineRange()"> &gt; </div>
+</div>
 
 <div id="loginOverlay">
     <h3 style="margin-bottom:20px;">پنل مدیریت ویرایشگر</h3>
@@ -95,6 +120,7 @@
         <button onclick="addNewFabricText()" class="upload-btn" style="background: #e83e8c;">+ متن دستی</button>
         <button id="undoBtn" class="upload-btn" style="background: #6f42c1;">برگشت (Undo)</button>
         <button onclick="fullReset()" class="upload-btn" style="background: #333;">پاکسازی کل پروژه</button>
+        <button id="focusModeBtn" class="upload-btn" style="background: #000; border: 1px solid #007bff;">حالت تمرکز (سرعت بالا)</button>
     </div>
     <div id="pagesList"></div>
 </div>
@@ -123,10 +149,10 @@
     <div class="style-grid">
         <div class="style-item" onclick="applyFont('font')">عادی</div>
         <div class="style-item" onclick="applyFont('a.gam.azad')">لرزش</div>
-        <div class="style-item" onclick="applyFont('bfarnaz')">مستطیل</div>
+        <div class="style-item" onclick="applyFont('bfarnaz')">فارناز</div>
         <div class="style-item" onclick="applyFont('afsaneh')">فریاد</div>
-        <div class="style-item" onclick="applyFont('bmorvard')">فکر</div>
-        <div class="style-item" onclick="applyFont('bhoma')">بیرون بالن</div>
+        <div class="style-item" onclick="applyFont('bmorvard')">مروارید</div>
+        <div class="style-item" onclick="applyFont('bhoma')">هما</div>
     </div>
     <div class="menu-section">رنگ و هاله</div>
     <div class="color-palette">
@@ -141,7 +167,6 @@
 </div>
 
 <script>
-    // --- مدیریت ورود و حافظه دائمی ---
     const LOGIN_PASS = 'Qwjavid77'; 
     const GLOBAL_UPLOAD_LIMIT = 30; 
 
@@ -154,7 +179,7 @@
     function checkPass() {
         const input = document.getElementById('passInput');
         if(input.value === LOGIN_PASS) {
-            localStorage.setItem('isLoggedIn', 'true'); // ذخیره در مرورگر
+            localStorage.setItem('isLoggedIn', 'true'); 
             document.getElementById('loginOverlay').style.opacity = '0';
             setTimeout(() => { document.getElementById('loginOverlay').style.display = 'none'; }, 500);
         } else {
@@ -195,14 +220,22 @@
         originX: 'center', originY: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
     });
 
-    // --- مدیریت فایل‌ها و محدودیت تعداد ---
+    canvas.on('mouse:wheel', function(opt) {
+        let delta = opt.e.deltaY;
+        let zoom = canvas.getZoom();
+        zoom *= 0.999 ** delta;
+        if (zoom > 120) zoom = 120;
+        if (zoom < 0.01) zoom = 0.01;
+        canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+    });
 
     function handleFiles(files, type) {
         if (pages.length + files.length > GLOBAL_UPLOAD_LIMIT) {
             alert(`محدودیت سیستم: حداکثر ${GLOBAL_UPLOAD_LIMIT} فایل مجاز است.`);
             return;
         }
-
         Array.from(files).forEach((file, i) => {
             const url = URL.createObjectURL(file);
             if (!pages[i]) {
@@ -234,13 +267,11 @@
         saveCurrentPageState();
         currentPageIdx = idx;
         const p = pages[idx];
-        
         originalImg.src = p.originalSrc || "";
         cleanImg.src = p.cleanSrc || "";
         textInput.value = p.textInputValue || "";
         markersData = p.markersData || [];
         undoStack = [];
-
         canvas.loadFromJSON(p.fabricJSON || '{"objects":[],"background":""}', () => {
             canvas.renderAll();
             fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
@@ -260,8 +291,6 @@
             list.appendChild(div);
         });
     }
-
-    // --- بقیه کدهای اصلی شما بدون هیچ تغییری ---
 
     function saveState() {
         undoStack.push(JSON.stringify(canvas.toJSON()));
@@ -310,13 +339,33 @@
         }, 
         render: renderIcon('close') 
     });
+    
+    // --- پیاده‌سازی دکمه استایل برای سرعت بالا ---
+    ctl.styleToggle = new fabric.Control({
+        x: 0.5, y: 0.5, offsetX: 20, offsetY: 20,
+        cursorStyle: 'pointer',
+        mouseUpHandler: (e, t) => {
+            const isVisible = menu.style.display === 'flex';
+            menu.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) updateMenuPos();
+            return true;
+        },
+        render: renderIcon('palette') 
+    });
+
     ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
 
     textInput.addEventListener('input', () => {
         const lines = textInput.value.split('\n');
         fabricTexts.forEach((textObj, i) => {
             if(lines[i] !== undefined) {
-                textObj.set('text', lines[i]);
+                // اگر متن دایره‌ای فعال باشد، آن را دوباره محاسبه کن، وگرنه متن خام
+                if(textObj.circleMode) {
+                    textObj.set('text', applyMangaCircleLogic(lines[i], textObj.circleMode));
+                } else {
+                    textObj.set('text', lines[i]);
+                }
+                if(textObj.text.length < 10) textObj.set('width', 100);
                 canvas.renderAll();
             }
         });
@@ -344,26 +393,20 @@
         const scaleY = originalImg.naturalHeight / rect.height;
         const x = Math.floor((e.clientX - rect.left) * scaleX);
         const y = Math.floor((e.clientY - rect.top) * scaleY);
-
         const result = runFloodFill(x, y);
         const currentIdx = markersData.length;
-        
         const lines = textInput.value.split('\n');
-        if (lines.length <= currentIdx) {
-            textInput.value += (textInput.value ? "\n" : "");
-        }
-        
+        if (lines.length <= currentIdx) textInput.value += (textInput.value ? "\n" : "");
         const updatedLines = textInput.value.split('\n');
         const content = updatedLines[currentIdx] || "";
-
         markersData.push(result);
-
         const textObj = new fabric.Textbox(content, {
             left: result.x, top: result.y, fontFamily: 'font', fill: '#000000',
-            fontSize: 40, textAlign: 'center', width: Math.max(result.w || 100, 150), 
-            minHeight: 50, direction: 'rtl', editable: true
+            fontSize: 40, textAlign: 'center', 
+            width: content.length < 5 ? 80 : Math.max(result.w || 100, 150), 
+            minHeight: 50, direction: 'rtl', editable: true,
+            splitByGrapheme: false 
         });
-
         fabricTexts.push(textObj);
         canvas.add(textObj);
         drawUI();
@@ -375,7 +418,9 @@
             const idx = fabricTexts.indexOf(e.target);
             if (idx > -1) {
                 const lines = textInput.value.split('\n');
-                lines[idx] = e.target.text;
+                // ذخیره متن اصلی بدون کشیدگی در TextArea
+                let cleanText = e.target.text.replace(/ـ/g, '').replace(/\n/g, ' ');
+                lines[idx] = cleanText;
                 textInput.value = lines.join('\n');
             }
         }
@@ -401,7 +446,6 @@
             const [cx, cy] = stack.pop();
             if (Math.abs(cx - startX) > LIMIT || Math.abs(cy - startY) > LIMIT) continue;
             if (cx < 0 || cy < 0 || cx >= tempCanvas.width || cy >= tempCanvas.height) continue;
-            
             const idx = cy * tempCanvas.width + cx;
             if(visited[idx]) continue;
             visited[idx] = 1;
@@ -437,7 +481,7 @@
 
     function drawUI() {
         document.getElementById('markerOverlay').innerHTML = '';
-        fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
+        if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
         markersData.forEach((data, i) => {
             fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
             if(data.isCircle) {
@@ -468,32 +512,52 @@
     }, true);
 
     canvas.on('mouse:down', (opt) => {
-        if (opt.target) document.getElementById('canvasHost').style.pointerEvents = "auto";
-        else {
+        if (opt.target) {
+            document.getElementById('canvasHost').style.pointerEvents = "auto";
+        } else {
             document.getElementById('canvasHost').style.pointerEvents = "none";
             canvas.discardActiveObject().renderAll();
-            menu.style.display = 'none';
+            menu.style.display = 'none'; // بستن منو در صورت کلیک روی فضای خالی
         }
     });
 
     canvas.on('object:moving', updateMenuPos);
     canvas.on('object:scaling', updateMenuPos);
-    canvas.on('selection:created', (e) => showMenu(e.selected[0]));
-    canvas.on('selection:updated', (e) => showMenu(e.selected[0]));
-
-    function showMenu(obj) { if (obj) { menu.style.display = 'flex'; updateMenuPos(); } }
+    canvas.on('selection:cleared', () => menu.style.display = 'none');
     
+    // منو فقط زمانی باز شود که روی دکمه پالت کلیک شود، نه با صرفاً انتخاب متن
+    canvas.on('selection:created', (e) => { menu.style.display = 'none'; });
+    canvas.on('selection:updated', (e) => { menu.style.display = 'none'; });
+
     function updateMenuPos() {
-        const obj = canvas.getActiveObject(); if (!obj) return;
+        const obj = canvas.getActiveObject(); 
+        if (!obj || menu.style.display !== 'flex') return;
+        
         const rect = canvas.getElement().getBoundingClientRect();
+        
+        // محاسبه مختصات دقیق باکس متن در صفحه
         const objCoords = obj.getBoundingRect();
         const scaleX = rect.width / canvas.width;
         const scaleY = rect.height / canvas.height;
-        menu.style.left = (rect.left + (objCoords.left + objCoords.width/2) * scaleX - 120) + 'px';
-        menu.style.top = (rect.top + (objCoords.top + objCoords.height) * scaleY + 10) + 'px';
+        
+        // قرارگیری منو دقیقا زیر متن (لبه پایین)
+        const menuWidth = 240;
+        const leftPos = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuWidth / 2);
+        const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 10;
+        
+        menu.style.left = leftPos + 'px';
+        menu.style.top = topPos + 'px';
+        
+        // جلوگیری از خروج منو از سمت راست یا چپ صفحه
+        if(parseInt(menu.style.left) + menuWidth > window.innerWidth) {
+            menu.style.left = (window.innerWidth - menuWidth - 10) + 'px';
+        }
+        if(parseInt(menu.style.left) < 0) {
+            menu.style.left = '10px';
+        }
     }
 
-    function applyFont(f) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fontFamily', f); canvas.renderAll(); updateMenuPos(); } }
+    function applyFont(f) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fontFamily', f); canvas.renderAll(); } }
     function changeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fill', c); canvas.renderAll(); } }
     function changeStrokeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('stroke', c); canvas.renderAll(); } }
     function changeStrokeWidth(w) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('strokeWidth', parseFloat(w)); canvas.renderAll(); } }
@@ -516,13 +580,11 @@
         reader.readAsDataURL(file);
     }
 
-    // --- دانلود دسته‌جمعی ---
     document.getElementById('downloadBtn').addEventListener('click', async () => {
         saveCurrentPageState();
         for (let i = 0; i < pages.length; i++) {
             const p = pages[i];
             if (!p.cleanSrc) continue;
-
             await new Promise(resolve => {
                 const offImg = new Image();
                 offImg.onload = () => {
@@ -531,7 +593,6 @@
                     tempCanvas.height = offImg.naturalHeight;
                     const ctx = tempCanvas.getContext('2d');
                     ctx.drawImage(offImg, 0, 0);
-
                     const tempFabric = new fabric.StaticCanvas(null, { width: tempCanvas.width, height: tempCanvas.height });
                     tempFabric.loadFromJSON(p.fabricJSON, () => {
                         const textImg = new Image();
@@ -555,12 +616,165 @@
         saveState();
         const t = new fabric.Textbox('متن جدید', {
             left: canvas.width/2, top: canvas.height/2, fontFamily: 'Tahoma', fill: '#000', 
-            fontSize: 50, textAlign: 'center', width: 150, minHeight: 60, direction: 'rtl'
+            fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl'
         });
         canvas.add(t).setActiveObject(t);
         document.getElementById('canvasHost').style.pointerEvents = "auto";
     }
-</script>
 
+    let isFocusMode = false;
+    fabric.Object.prototype.objectCaching = false; 
+
+    document.getElementById('focusModeBtn').addEventListener('click', () => {
+        isFocusMode = !isFocusMode;
+        document.body.classList.toggle('focus-active');
+        const originalWrapper = document.getElementById('originalWrapper');
+        const focusBtn = document.getElementById('focusModeBtn');
+        if (isFocusMode) {
+            focusBtn.innerText = "خروج از تمرکز";
+            focusBtn.style.background = "#007bff";
+            originalWrapper.style.display = 'none'; 
+            if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height); 
+        } else {
+            focusBtn.innerText = "حالت تمرکز (سرعت بالا)";
+            focusBtn.style.background = "#000";
+            originalWrapper.style.display = 'block';
+            drawUI(); 
+            canvas.setZoom(1);
+            canvas.absolutePan({ x: 0, y: 0 });
+        }
+    });
+
+    const originalDrawUI = drawUI;
+    drawUI = function() { if (!isFocusMode) originalDrawUI(); };
+
+    // --- بخش جدید: منطق دایره‌نویسی و کنترلر دایره‌ای ---
+
+    let currentRangeStart = 2;
+    const lineSelector = document.getElementById('line-selector-ui');
+    const circleContainer = document.getElementById('circle-container');
+
+    function updateLineCircles() {
+        circleContainer.innerHTML = '';
+        const obj = canvas.getActiveObject();
+        for(let i = currentRangeStart; i < currentRangeStart + 4; i++) {
+            const circle = document.createElement('div');
+            circle.className = 'line-circle' + (obj && obj.circleMode === i ? ' active' : '');
+            circle.innerText = i;
+            circle.onclick = () => setLineMode(i);
+            circleContainer.appendChild(circle);
+        }
+    }
+
+    function toggleLineRange() {
+        currentRangeStart = currentRangeStart === 2 ? 6 : 2;
+        updateLineCircles();
+    }
+
+    function setLineMode(num) {
+        const obj = canvas.getActiveObject();
+        if(!obj || obj.type !== 'textbox') return;
+        saveState();
+        
+        // اگر همان عدد قبلی زده شد، به حالت ۱ خطی برگرد
+        if (obj.circleMode === num) {
+            obj.circleMode = null;
+            const idx = fabricTexts.indexOf(obj);
+            const originalLines = textInput.value.split('\n');
+            obj.set('text', originalLines[idx] || obj.text.replace(/ـ/g, '').replace(/\n/g, ' '));
+        } else {
+            obj.circleMode = num;
+            const idx = fabricTexts.indexOf(obj);
+            const originalLines = textInput.value.split('\n');
+            const cleanText = originalLines[idx] || obj.text.replace(/ـ/g, '').replace(/\n/g, ' ');
+            obj.set('text', applyMangaCircleLogic(cleanText, num));
+        }
+        
+        canvas.renderAll();
+        updateLineCircles();
+    }
+
+    canvas.on('selection:created', showLineUI);
+    canvas.on('selection:updated', showLineUI);
+    canvas.on('selection:cleared', () => lineSelector.style.display = 'none');
+    canvas.on('object:moving', updateLineUIPos);
+    canvas.on('object:scaling', updateLineUIPos);
+
+    function showLineUI() {
+        const obj = canvas.getActiveObject();
+        if(obj && obj.type === 'textbox') {
+            lineSelector.style.display = 'flex';
+            updateLineCircles();
+            updateLineUIPos();
+        } else {
+            lineSelector.style.display = 'none';
+        }
+    }
+
+    function updateLineUIPos() {
+        const obj = canvas.getActiveObject();
+        if(!obj || lineSelector.style.display === 'none') return;
+        const rect = canvas.getElement().getBoundingClientRect();
+        const objCoords = obj.getBoundingRect();
+        const scaleX = rect.width / canvas.width;
+        const scaleY = rect.height / canvas.height;
+        
+        lineSelector.style.left = (rect.left + (objCoords.left + objCoords.width/2) * scaleX - 80) + 'px';
+        lineSelector.style.top = (rect.top + objCoords.top * scaleY - 50) + 'px';
+    }
+
+    // --- هسته منطق کشیدگی (بدون تغییر) ---
+    function applyMangaCircleLogic(rawText, lineCount) {
+        const basePatterns = {
+            2: [3, 5], 3: [3, 6, 3], 4: [3, 6, 6, 3], 5: [3, 6, 8, 6, 3],
+            6: [3, 6, 8, 8, 6, 3], 7: [3, 6, 8, 10, 8, 6, 3], 8: [3, 6, 8, 10, 10, 8, 6, 3],
+            9: [3, 6, 8, 10, 12, 10, 8, 6, 3], 10: [3, 6, 8, 10, 12, 12, 10, 8, 6, 3]
+        };
+        const cannotConnectLeft = "ادذرزژوآء"; 
+        const punctuation = " .،!؟:؛-()\"";
+        
+        let words = rawText.replace(/ـ/g, '').split(/\s+/);
+        let pattern = basePatterns[lineCount] || [5];
+        let totalChars = words.join("").length;
+        let scaleFactor = Math.max(1.1, (totalChars + words.length) / pattern.reduce((a,b)=>a+b, 0));
+        let targetLengths = pattern.map(w => Math.round(w * scaleFactor));
+
+        let linesWords = Array.from({ length: lineCount }, () => []);
+        let currentLine = 0;
+
+        words.forEach(word => {
+            let currentLineText = linesWords[currentLine].join(" ");
+            if (currentLine < lineCount - 1) {
+                let currentDist = Math.abs(targetLengths[currentLine] - currentLineText.length);
+                let nextDist = Math.abs(targetLengths[currentLine] - (currentLineText + " " + word).length);
+                if (nextDist > currentDist && currentLineText.length > 0) currentLine++;
+            }
+            linesWords[currentLine].push(word);
+        });
+
+        return linesWords.map((lineArr, idx) => {
+            let lineText = lineArr.join(" ");
+            let targetLen = targetLengths[idx];
+            if (lineText.length >= targetLen) return lineText;
+            
+            let chars = lineText.split("");
+            let diff = targetLen - lineText.length;
+            let validSlots = [];
+            for (let i = 0; i < chars.length - 1; i++) {
+                if (!cannotConnectLeft.includes(chars[i]) && !punctuation.includes(chars[i]) && !punctuation.includes(chars[i+1])) {
+                    validSlots.push(i);
+                }
+            }
+            if (validSlots.length > 0) {
+                let counter = 0;
+                while (diff > 0) {
+                    chars[validSlots[counter % validSlots.length]] += "ـ";
+                    diff--; counter++;
+                }
+            }
+            return chars.join("");
+        }).join("\n");
+    }
+</script>
 </body>
-</html>
+    </html>
