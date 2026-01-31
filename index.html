@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ویرایشگر مانگا - نسخه نهایی هوشمند</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+    <style>
+        /* استایل‌های بخش ورود */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #0b0b0b; z-index: 10000; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center;
+            transition: 0.5s;
+        }
+        #loginOverlay input {
+            padding: 12px; border-radius: 8px; border: 1px solid #444; 
+            background: #222; color: white; text-align: center; margin-bottom: 10px;
+            outline: none; width: 200px;
+        }
+        #loginOverlay input.error { border-color: #dc3545; box-shadow: 0 0 10px #dc3545; }
+
+        @font-face { font-family: 'font'; src: url('1/font.ttf'), url('1/font.otf'); font-display: swap; }
+        @font-face { font-family: 'a.gam.azad'; src: url('1/a.gam.azad.ttf'); font-display: swap; }
+        @font-face { font-family: 'bfarnaz'; src: url('1/bfarnaz.ttf'); font-display: swap; }
+        @font-face { font-family: 'afsaneh'; src: url('1/afsaneh.ttf'); font-display: swap; }
+        @font-face { font-family: 'bmorvard'; src: url('1/bmorvard.ttf'); font-display: swap; }
+        @font-face { font-family: 'bhoma'; src: url('1/bhoma.ttf'); font-display: swap; }
+
+        body { font-family: Arial, sans-serif; margin: 0; background: #0b0b0b; color: white; direction: rtl; overflow: hidden; height: 100vh; }
+        
+        #topUI { padding: 10px; background: #1a1a1a; border-bottom: 2px solid #333; min-height: 135px; max-height: 40vh; overflow-y: auto; box-sizing: border-box; }
+        textarea { width: 100%; min-height: 50px; padding: 8px; font-size: 14px; box-sizing: border-box; border-radius: 5px; background: #222; color: white; border: 1px solid #444; resize: vertical; }
+        
+        .buttons { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .upload-btn { display: inline-block; padding: 6px 12px; font-size: 12px; background-color: #007bff; color: white; cursor: pointer; border-radius: 5px; border: none; text-decoration: none; }
+        
+        #pagesList { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto; padding: 5px; background: #000; border-radius: 5px; }
+        .page-thumb { padding: 5px 15px; background: #333; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; transition: 0.2s; }
+        .page-thumb.active { background: #007bff; border-color: #fff; color: white; font-weight: bold; }
+
+        #mainContainer { display: flex; height: calc(100vh - 210px); gap: 2px; background: #111; overflow: hidden; }
+        
+        .image-wrapper { flex: 1; overflow: auto; position: relative; background: #000; border: 1px solid #333; transition: all 0.3s ease; }
+        #canvasHost { position: absolute; top: 0; left: 0; pointer-events: none; }
+        .canvas-container-wrapper { position: relative; display: block; width: fit-content; margin: 0 auto; }
+        img { display: block; user-select: none; pointer-events: auto; max-width: none; }
+        #floodCanvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+        .marker {
+            position: absolute; background: red; color: white; width: 24px; height: 24px; border-radius: 50%;
+            text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; cursor: pointer;
+            z-index: 100; transform: translate(-50%, -50%); border: 2px solid white;
+        }
+
+        #style-menu {
+            position: absolute; background: rgba(15, 15, 15, 0.95); border: 2px solid #007bff; border-radius: 12px;
+            display: none; flex-direction: column; width: 240px; padding: 10px; z-index: 9999;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.8); direction: rtl;
+        }
+        
+        .menu-section { color: #007bff; font-size: 10px; margin: 5px 0; border-bottom: 1px solid #333; font-weight: bold; }
+        .style-grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; }
+        .style-item { width: 48%; background: #222; color: white; padding: 5px 0; text-align: center; font-size: 10px; border-radius: 4px; cursor: pointer; border: 1px solid #444; }
+        .color-palette { display: flex; align-items: center; gap: 5px; }
+        #customColor, #strokeColor { width: 25px; height: 25px; border: none; cursor: pointer; }
+        .btn-action { background: #28a745; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
+        .hidden-panel { display: none !important; }
+    </style>
+</head>
+<body onload="checkLoginState()">
+
+<div id="loginOverlay">
+    <h3 style="margin-bottom:20px;">پنل مدیریت ویرایشگر</h3>
+    <input type="password" id="passInput" placeholder="رمز عبور را وارد کنید...">
+    <button class="upload-btn" onclick="checkPass()">تایید و ورود</button>
+</div>
+
+<div id="topUI">
+    <textarea id="textInput" placeholder="متن ترجمه (هر خط یک بالن)..."></textarea>
+    <div class="buttons">
+        <label class="upload-btn" for="uploadOriginal">آپلود اصلی‌ها (چندتایی)</label>
+        <input type="file" id="uploadOriginal" accept="image/*" multiple style="display:none">
+        
+        <label class="upload-btn" for="uploadClean" style="background:#6c757d">آپلود کلین‌ها (چندتایی)</label>
+        <input type="file" id="uploadClean" accept="image/*" multiple style="display:none">
+        
+        <button id="toggleOriginal" class="upload-btn" style="background: #dc3545;">نمایش/مخفی اصلی</button>
+        <button id="toggleClean" class="upload-btn" style="background: #28a745;">نمایش/مخفی کلین</button>
+        
+        <button id="downloadBtn" class="upload-btn" style="background: #ffc107; color: #000;">دانلود همه‌ی صفحات</button>
+        <button onclick="addNewFabricText()" class="upload-btn" style="background: #e83e8c;">+ متن دستی</button>
+        <button id="undoBtn" class="upload-btn" style="background: #6f42c1;">برگشت (Undo)</button>
+        <button onclick="fullReset()" class="upload-btn" style="background: #333;">پاکسازی کل پروژه</button>
+    </div>
+    <div id="pagesList"></div>
+</div>
+
+<div id="mainContainer">
+    <div class="image-wrapper" id="cleanWrapper">
+        <div class="canvas-container-wrapper" id="canvasWrapper">
+            <img id="cleanImage" src="" alt="">
+            <div id="canvasHost">
+                <canvas id="c"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="image-wrapper" id="originalWrapper">
+        <div class="canvas-container-wrapper">
+            <img id="originalImage" src="" alt="">
+            <canvas id="floodCanvas"></canvas>
+            <div id="markerOverlay"></div>
+        </div>
+    </div>
+</div>
+
+<div id="style-menu">
+    <div class="menu-section">فونت</div>
+    <div class="style-grid">
+        <div class="style-item" onclick="applyFont('font')">عادی</div>
+        <div class="style-item" onclick="applyFont('a.gam.azad')">لرزش</div>
+        <div class="style-item" onclick="applyFont('bfarnaz')">فارناز</div>
+        <div class="style-item" onclick="applyFont('afsaneh')">فریاد</div>
+        <div class="style-item" onclick="applyFont('bmorvard')">مروارید</div>
+        <div class="style-item" onclick="applyFont('bhoma')">هما</div>
+    </div>
+    <div class="menu-section">رنگ و هاله</div>
+    <div class="color-palette">
+        <input type="color" id="customColor" oninput="changeColor(this.value)">
+        <input type="color" id="strokeColor" oninput="changeStrokeColor(this.value)">
+        <input type="range" id="strokeWidth" min="0" max="10" value="0" step="0.5" oninput="changeStrokeWidth(this.value)" style="width: 60px;">
+    </div>
+    <div class="menu-section">فونت جدید</div>
+    <input type="file" id="fontUpload" accept=".ttf,.otf" style="display:none" onchange="addNewFont(event)">
+    <button class="btn-action" onclick="document.getElementById('fontUpload').click()">+ آپلود فونت</button>
+    <div id="custom-fonts-list" class="style-grid" style="margin-top:5px;"></div>
+</div>
+
+<script>
+    // --- مدیریت ورود و حافظه دائمی ---
+    const LOGIN_PASS = 'Qwjavid77'; 
+    const GLOBAL_UPLOAD_LIMIT = 30; 
+
+    function checkLoginState() {
+        if(localStorage.getItem('isLoggedIn') === 'true') {
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+    }
+
+    function checkPass() {
+        const input = document.getElementById('passInput');
+        if(input.value === LOGIN_PASS) {
+            localStorage.setItem('isLoggedIn', 'true'); // ذخیره در مرورگر
+            document.getElementById('loginOverlay').style.opacity = '0';
+            setTimeout(() => { document.getElementById('loginOverlay').style.display = 'none'; }, 500);
+        } else {
+            input.classList.add('error');
+            setTimeout(() => { input.classList.remove('error'); }, 500);
+        }
+    }
+
+    function fullReset() {
+        if(confirm("آیا مطمئن هستید؟ همه‌ی صفحات و وضعیت ورود پاک خواهد شد.")) {
+            localStorage.removeItem('isLoggedIn');
+            location.reload();
+        }
+    }
+
+    let pages = [];
+    let currentPageIdx = 0;
+    let markersData = [];
+    let fabricTexts = [];
+    let undoStack = [];
+    const MAX_UNDO = 10;
+
+    const originalImg = document.getElementById('originalImage');
+    const cleanImg = document.getElementById('cleanImage');
+    const floodCanvas = document.getElementById('floodCanvas');
+    const fCtx = floodCanvas.getContext('2d');
+    const textInput = document.getElementById('textInput');
+    const menu = document.getElementById('style-menu');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
+    const canvas = new fabric.Canvas('c', {
+        selection: false, centeredRotation: true, renderOnAddRemove: true
+    });
+
+    fabric.Object.prototype.set({
+        transparentCorners: false, cornerStyle: 'circle', cornerColor: '#007bff', 
+        cornerStrokeColor: '#fff', cornerSize: 16, padding: 15,
+        originX: 'center', originY: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
+    });
+
+    // --- مدیریت فایل‌ها و محدودیت تعداد ---
+
+    function handleFiles(files, type) {
+        if (pages.length + files.length > GLOBAL_UPLOAD_LIMIT) {
+            alert(`محدودیت سیستم: حداکثر ${GLOBAL_UPLOAD_LIMIT} فایل مجاز است.`);
+            return;
+        }
+
+        Array.from(files).forEach((file, i) => {
+            const url = URL.createObjectURL(file);
+            if (!pages[i]) {
+                pages[i] = { 
+                    originalSrc: "", cleanSrc: "", 
+                    markersData: [], textInputValue: "", 
+                    fabricJSON: JSON.stringify(canvas.toJSON()) 
+                };
+            }
+            if (type === 'original') pages[i].originalSrc = url;
+            else pages[i].cleanSrc = url;
+        });
+        updateThumbs();
+        if (pages.length > 0 && !cleanImg.src) switchPage(0);
+    }
+
+    document.getElementById('uploadOriginal').addEventListener('change', e => handleFiles(e.target.files, 'original'));
+    document.getElementById('uploadClean').addEventListener('change', e => handleFiles(e.target.files, 'clean'));
+
+    function saveCurrentPageState() {
+        if (pages[currentPageIdx]) {
+            pages[currentPageIdx].markersData = [...markersData];
+            pages[currentPageIdx].fabricJSON = JSON.stringify(canvas.toJSON());
+            pages[currentPageIdx].textInputValue = textInput.value;
+        }
+    }
+
+    function switchPage(idx) {
+        saveCurrentPageState();
+        currentPageIdx = idx;
+        const p = pages[idx];
+        
+        originalImg.src = p.originalSrc || "";
+        cleanImg.src = p.cleanSrc || "";
+        textInput.value = p.textInputValue || "";
+        markersData = p.markersData || [];
+        undoStack = [];
+
+        canvas.loadFromJSON(p.fabricJSON || '{"objects":[],"background":""}', () => {
+            canvas.renderAll();
+            fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
+            updateThumbs();
+            drawUI();
+        });
+    }
+
+    function updateThumbs() {
+        const list = document.getElementById('pagesList');
+        list.innerHTML = "";
+        pages.forEach((p, i) => {
+            const div = document.createElement('div');
+            div.className = `page-thumb ${i === currentPageIdx ? 'active' : ''}`;
+            div.innerText = `صفحه ${i + 1}`;
+            div.onclick = () => switchPage(i);
+            list.appendChild(div);
+        });
+    }
+
+    // --- بقیه کدهای اصلی شما بدون هیچ تغییری ---
+
+    function saveState() {
+        undoStack.push(JSON.stringify(canvas.toJSON()));
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+    }
+
+    document.getElementById('undoBtn').addEventListener('click', () => {
+        if (undoStack.length > 0) {
+            const state = undoStack.pop();
+            canvas.loadFromJSON(state, () => {
+                canvas.renderAll();
+                fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
+            });
+        }
+    });
+
+    function renderIcon(iconName) {
+        return function(ctx, left, top, styleOverride, fabricObject) {
+            const size = 26;
+            ctx.save(); 
+            ctx.translate(left, top);
+            ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+            ctx.beginPath(); 
+            ctx.arc(0, 0, size/2, 0, Math.PI * 2, false);
+            ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#007bff"; ctx.stroke();
+            ctx.fillStyle = "#000"; ctx.font = '16px "Material Icons"';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(iconName, 0, 0); 
+            ctx.restore();
+        }
+    }
+
+    const ctl = fabric.Textbox.prototype.controls;
+    ctl.delete = new fabric.Control({ 
+        x: -0.5, y: -0.5, offsetX: -20, offsetY: -20, 
+        mouseUpHandler: (e, t) => {
+            saveState();
+            const idx = fabricTexts.indexOf(t.target);
+            if(idx > -1) {
+                fabricTexts.splice(idx, 1);
+                canvas.remove(t.target);
+                shiftTextsAndMarkers();
+            } else {
+                canvas.remove(t.target);
+            }
+        }, 
+        render: renderIcon('close') 
+    });
+    ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
+
+    textInput.addEventListener('input', () => {
+        const lines = textInput.value.split('\n');
+        fabricTexts.forEach((textObj, i) => {
+            if(lines[i] !== undefined) {
+                textObj.set('text', lines[i]);
+                canvas.renderAll();
+            }
+        });
+        textInput.style.height = 'auto';
+        textInput.style.height = textInput.scrollHeight + 'px';
+    });
+
+    originalImg.onload = () => {
+        floodCanvas.width = originalImg.naturalWidth;
+        floodCanvas.height = originalImg.naturalHeight;
+    };
+
+    cleanImg.onload = () => {
+        canvas.setWidth(cleanImg.naturalWidth);
+        canvas.setHeight(cleanImg.naturalHeight);
+        canvas.getElement().style.width = cleanImg.clientWidth + 'px';
+        canvas.getElement().style.height = cleanImg.clientHeight + 'px';
+    };
+
+    originalImg.addEventListener('click', e => {
+        if(!originalImg.naturalWidth) return;
+        saveState();
+        const rect = originalImg.getBoundingClientRect();
+        const scaleX = originalImg.naturalWidth / rect.width;
+        const scaleY = originalImg.naturalHeight / rect.height;
+        const x = Math.floor((e.clientX - rect.left) * scaleX);
+        const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+        const result = runFloodFill(x, y);
+        const currentIdx = markersData.length;
+        
+        const lines = textInput.value.split('\n');
+        if (lines.length <= currentIdx) {
+            textInput.value += (textInput.value ? "\n" : "");
+        }
+        
+        const updatedLines = textInput.value.split('\n');
+        const content = updatedLines[currentIdx] || "";
+
+        markersData.push(result);
+
+        const textObj = new fabric.Textbox(content, {
+            left: result.x, top: result.y, fontFamily: 'font', fill: '#000000',
+            fontSize: 40, textAlign: 'center', width: Math.max(result.w || 100, 150), 
+            minHeight: 50, direction: 'rtl', editable: true
+        });
+
+        fabricTexts.push(textObj);
+        canvas.add(textObj);
+        drawUI();
+    });
+
+    canvas.on('object:modified', (e) => {
+        saveState();
+        if (e.target && e.target.type === 'textbox') {
+            const idx = fabricTexts.indexOf(e.target);
+            if (idx > -1) {
+                const lines = textInput.value.split('\n');
+                lines[idx] = e.target.text;
+                textInput.value = lines.join('\n');
+            }
+        }
+    });
+
+    function runFloodFill(startX, startY) {
+        const TOLERANCE = 35;
+        const LIMIT = 300;
+        const MAX_AREA = 500;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = originalImg.naturalWidth; tempCanvas.height = originalImg.naturalHeight;
+        const tCtx = tempCanvas.getContext('2d');
+        tCtx.drawImage(originalImg, 0, 0);
+        const imgData = tCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        const data = imgData.data;
+        const visited = new Uint8Array(tempCanvas.width * tempCanvas.height);
+        const stack = [[startX, startY]];
+        const baseIdx = (startY * tempCanvas.width + startX) * 4;
+        const baseColor = [data[baseIdx], data[baseIdx+1], data[baseIdx+2]];
+        let minX = startX, maxX = startX, minY = startY, maxY = startY, points = [], isLeaking = false;
+
+        while(stack.length > 0) {
+            const [cx, cy] = stack.pop();
+            if (Math.abs(cx - startX) > LIMIT || Math.abs(cy - startY) > LIMIT) continue;
+            if (cx < 0 || cy < 0 || cx >= tempCanvas.width || cy >= tempCanvas.height) continue;
+            
+            const idx = cy * tempCanvas.width + cx;
+            if(visited[idx]) continue;
+            visited[idx] = 1;
+            const i = idx * 4;
+            const diff = Math.max(Math.abs(data[i]-baseColor[0]), Math.abs(data[i+1]-baseColor[1]), Math.abs(data[i+2]-baseColor[2]));
+            if(diff > TOLERANCE) continue;
+            points.push([cx, cy]);
+            minX = Math.min(minX, cx); maxX = Math.max(maxX, cx);
+            minY = Math.min(minY, cy); maxY = Math.max(maxY, cy);
+            if(maxX - minX > MAX_AREA || maxY - minY > MAX_AREA) { isLeaking = true; break; }
+            stack.push([cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]);
+        }
+        if (isLeaking) return { x: startX, y: startY, w: 100, h: 100, isCircle: true, points: [] };
+        return { x: (minX + maxX)/2, y: (minY + maxY)/2, w: (maxX - minX), h: (maxY - minY), isCircle: false, points: points };
+    }
+
+    function shiftTextsAndMarkers() {
+        fabricTexts.forEach((textObj, i) => {
+            if (markersData[i]) {
+                textObj.set({ left: markersData[i].x, top: markersData[i].y });
+                textObj.setCoords();
+            }
+        });
+        canvas.renderAll();
+        drawUI();
+    }
+
+    function removeMarker(index) {
+        saveState();
+        markersData.splice(index, 1);
+        shiftTextsAndMarkers();
+    }
+
+    function drawUI() {
+        document.getElementById('markerOverlay').innerHTML = '';
+        fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
+        markersData.forEach((data, i) => {
+            fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
+            if(data.isCircle) {
+                fCtx.beginPath(); fCtx.arc(data.x, data.y, 50, 0, Math.PI*2); fCtx.fill();
+            } else {
+                data.points.forEach(p => fCtx.fillRect(p[0], p[1], 1, 1));
+            }
+            const dot = document.createElement('div');
+            dot.className = 'marker';
+            dot.style.left = (data.x / originalImg.naturalWidth * 100) + '%';
+            dot.style.top = (data.y / originalImg.naturalHeight * 100) + '%';
+            dot.innerText = i + 1;
+            dot.onclick = (e) => { e.stopPropagation(); removeMarker(i); };
+            document.getElementById('markerOverlay').appendChild(dot);
+        });
+    }
+
+    document.getElementById('toggleOriginal').addEventListener('click', () => {
+        document.getElementById('originalWrapper').classList.toggle('hidden-panel');
+    });
+    document.getElementById('toggleClean').addEventListener('click', () => {
+        document.getElementById('cleanWrapper').classList.toggle('hidden-panel');
+    });
+
+    canvasWrapper.addEventListener('mousedown', (e) => {
+        const target = canvas.findTarget(e);
+        if (target) document.getElementById('canvasHost').style.pointerEvents = "auto";
+    }, true);
+
+    canvas.on('mouse:down', (opt) => {
+        if (opt.target) document.getElementById('canvasHost').style.pointerEvents = "auto";
+        else {
+            document.getElementById('canvasHost').style.pointerEvents = "none";
+            canvas.discardActiveObject().renderAll();
+            menu.style.display = 'none';
+        }
+    });
+
+    canvas.on('object:moving', updateMenuPos);
+    canvas.on('object:scaling', updateMenuPos);
+    canvas.on('selection:created', (e) => showMenu(e.selected[0]));
+    canvas.on('selection:updated', (e) => showMenu(e.selected[0]));
+
+    function showMenu(obj) { if (obj) { menu.style.display = 'flex'; updateMenuPos(); } }
+    
+    function updateMenuPos() {
+        const obj = canvas.getActiveObject(); if (!obj) return;
+        const rect = canvas.getElement().getBoundingClientRect();
+        const objCoords = obj.getBoundingRect();
+        const scaleX = rect.width / canvas.width;
+        const scaleY = rect.height / canvas.height;
+        menu.style.left = (rect.left + (objCoords.left + objCoords.width/2) * scaleX - 120) + 'px';
+        menu.style.top = (rect.top + (objCoords.top + objCoords.height) * scaleY + 10) + 'px';
+    }
+
+    function applyFont(f) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fontFamily', f); canvas.renderAll(); updateMenuPos(); } }
+    function changeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fill', c); canvas.renderAll(); } }
+    function changeStrokeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('stroke', c); canvas.renderAll(); } }
+    function changeStrokeWidth(w) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('strokeWidth', parseFloat(w)); canvas.renderAll(); } }
+
+    function addNewFont(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const fontName = 'custom_' + Date.now();
+            const newFont = new FontFace(fontName, `url(${e.target.result})`);
+            newFont.load().then(loaded => {
+                document.fonts.add(loaded);
+                const item = document.createElement('div');
+                item.className = 'style-item';
+                item.innerText = file.name.substring(0,8);
+                item.onclick = () => applyFont(fontName);
+                document.getElementById('custom-fonts-list').appendChild(item);
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // --- دانلود دسته‌جمعی ---
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+        saveCurrentPageState();
+        for (let i = 0; i < pages.length; i++) {
+            const p = pages[i];
+            if (!p.cleanSrc) continue;
+
+            await new Promise(resolve => {
+                const offImg = new Image();
+                offImg.onload = () => {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = offImg.naturalWidth;
+                    tempCanvas.height = offImg.naturalHeight;
+                    const ctx = tempCanvas.getContext('2d');
+                    ctx.drawImage(offImg, 0, 0);
+
+                    const tempFabric = new fabric.StaticCanvas(null, { width: tempCanvas.width, height: tempCanvas.height });
+                    tempFabric.loadFromJSON(p.fabricJSON, () => {
+                        const textImg = new Image();
+                        textImg.onload = () => {
+                            ctx.drawImage(textImg, 0, 0);
+                            const link = document.createElement('a');
+                            link.download = `page_${i+1}.png`;
+                            link.href = tempCanvas.toDataURL('image/png');
+                            link.click();
+                            resolve();
+                        };
+                        textImg.src = tempFabric.toDataURL({ multiplier: 1 });
+                    });
+                };
+                offImg.src = p.cleanSrc;
+            });
+        }
+    });
+
+    function addNewFabricText() {
+        saveState();
+        const t = new fabric.Textbox('متن جدید', {
+            left: canvas.width/2, top: canvas.height/2, fontFamily: 'Tahoma', fill: '#000', 
+            fontSize: 50, textAlign: 'center', width: 150, minHeight: 60, direction: 'rtl'
+        });
+        canvas.add(t).setActiveObject(t);
+        document.getElementById('canvasHost').style.pointerEvents = "auto";
+    }
+</script>
+
+</body>
+</html>
