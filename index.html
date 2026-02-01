@@ -91,6 +91,9 @@
         }
     </style>
 </head>
+<link rel="preload" href="1/font.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="1/a.gam.azad.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="1/bfarnaz.ttf" as="font" type="font/ttf" crossorigin>
 <body onload="checkLoginState()">
 
 <div id="line-selector-ui">
@@ -524,7 +527,17 @@
     canvas.on('object:moving', updateMenuPos);
     canvas.on('object:scaling', updateMenuPos);
     canvas.on('selection:cleared', () => menu.style.display = 'none');
-    
+    // جایگزین تابع در خط ۵۲۸
+function applyFont(f) { 
+    saveState(); 
+    const o = canvas.getActiveObject(); 
+    if(o && o.type === 'textbox'){ 
+        o.set('fontFamily', f); 
+        // اطمینان از رندر سریع در موتور فبریک
+        o.dirty = true;
+        canvas.requestRenderAll(); 
+    } 
+}
     // منو فقط زمانی باز شود که روی دکمه پالت کلیک شود، نه با صرفاً انتخاب متن
     canvas.on('selection:created', (e) => { menu.style.display = 'none'; });
     canvas.on('selection:updated', (e) => { menu.style.display = 'none'; });
@@ -777,4 +790,4 @@
     }
 </script>
 </body>
-    </html>
+</html>
