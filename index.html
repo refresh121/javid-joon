@@ -216,15 +216,18 @@
         selection: false, centeredRotation: true, renderOnAddRemove: true
     });
 
+    // مهم: کش آبجکت را خاموش می‌کنیم تا فونت در کامپیوتر سریع‌تر آپدیت شود
+    fabric.Object.prototype.objectCaching = false;
+
     fabric.Object.prototype.set({
         transparentCorners: false, cornerStyle: 'circle', cornerColor: '#007bff', 
         cornerStrokeColor: '#fff', cornerSize: 16, padding: 15,
         originX: 'center', originY: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
     });
 
-    // --- اصلاح رفتار موس: زوم فقط با نگه داشتن دکمه Ctrl ---
+    // --- اسکرول موس برای حرکت (بدون زوم)، کنترل+اسکرول برای زوم ---
     canvas.on('mouse:wheel', function(opt) {
-        if (opt.e.ctrlKey) { // شرط اضافه شده: فقط اگر کنترل نگه‌داشته شده باشد زوم کن
+        if (opt.e.ctrlKey) { 
             let delta = opt.e.deltaY;
             let zoom = canvas.getZoom();
             zoom *= 0.999 ** delta;
@@ -234,7 +237,6 @@
             opt.e.preventDefault();
             opt.e.stopPropagation();
         }
-        // اگر Ctrl نگرفته باشد، اسکرول طبیعی مرورگر اتفاق می‌افتد
     });
 
     function handleFiles(files, type) {
@@ -329,7 +331,10 @@
         }
     }
 
+    // --- تعریف کنترل‌های اطراف متن ---
     const ctl = fabric.Textbox.prototype.controls;
+    
+    // دکمه حذف
     ctl.delete = new fabric.Control({ 
         x: -0.5, y: -0.5, offsetX: -20, offsetY: -20, 
         mouseUpHandler: (e, t) => {
@@ -346,7 +351,7 @@
         render: renderIcon('close') 
     });
     
-    // --- پیاده‌سازی دکمه استایل برای سرعت بالا ---
+    // دکمه استایل/پالت
     ctl.styleToggle = new fabric.Control({
         x: 0.5, y: 0.5, offsetX: 20, offsetY: 20,
         cursorStyle: 'pointer',
@@ -359,13 +364,36 @@
         render: renderIcon('palette') 
     });
 
+    // دکمه چرخش
     ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
+
+    // --- دکمه جدید: ویرایش متن (مداد) ---
+    // فقط با زدن این دکمه متن قابل تایپ می‌شود
+    ctl.edit = new fabric.Control({
+        x: 0, y: -0.5, offsetX: 0, offsetY: -25, // موقعیت در بالا وسط
+        cursorStyle: 'pointer',
+        mouseUpHandler: (e, transform) => {
+            const target = transform.target;
+            target.set('editable', true);
+            target.enterEditing();
+            target.selectAll();
+            canvas.renderAll();
+            return true;
+        },
+        render: renderIcon('edit') 
+    });
+
+    // وقتی ویرایش تمام شد (کلیک بیرون)، دوباره قفل شود
+    canvas.on('text:editing:exited', (e) => {
+        if(e.target) {
+            e.target.set('editable', false);
+        }
+    });
 
     textInput.addEventListener('input', () => {
         const lines = textInput.value.split('\n');
         fabricTexts.forEach((textObj, i) => {
             if(lines[i] !== undefined) {
-                // اگر متن دایره‌ای فعال باشد، آن را دوباره محاسبه کن، وگرنه متن خام
                 if(textObj.circleMode) {
                     textObj.set('text', applyMangaCircleLogic(lines[i], textObj.circleMode));
                 } else {
@@ -406,13 +434,17 @@
         const updatedLines = textInput.value.split('\n');
         const content = updatedLines[currentIdx] || "";
         markersData.push(result);
+        
+        // ایجاد متن جدید با قابلیت ویرایش خاموش (editable: false)
         const textObj = new fabric.Textbox(content, {
             left: result.x, top: result.y, fontFamily: 'font', fill: '#000000',
             fontSize: 40, textAlign: 'center', 
             width: content.length < 5 ? 80 : Math.max(result.w || 100, 150), 
-            minHeight: 50, direction: 'rtl', editable: true,
+            minHeight: 50, direction: 'rtl', 
+            editable: false, // پیش‌فرض غیرقابل تایپ
             splitByGrapheme: false 
         });
+        
         fabricTexts.push(textObj);
         canvas.add(textObj);
         drawUI();
@@ -424,7 +456,6 @@
             const idx = fabricTexts.indexOf(e.target);
             if (idx > -1) {
                 const lines = textInput.value.split('\n');
-                // ذخیره متن اصلی بدون کشیدگی در TextArea
                 let cleanText = e.target.text.replace(/ـ/g, '').replace(/\n/g, ' ');
                 lines[idx] = cleanText;
                 textInput.value = lines.join('\n');
@@ -523,7 +554,7 @@
         } else {
             document.getElementById('canvasHost').style.pointerEvents = "none";
             canvas.discardActiveObject().renderAll();
-            menu.style.display = 'none'; // بستن منو در صورت کلیک روی فضای خالی
+            menu.style.display = 'none';
         }
     });
 
@@ -531,20 +562,19 @@
     canvas.on('object:scaling', updateMenuPos);
     canvas.on('selection:cleared', () => menu.style.display = 'none');
     
-    // تابع اصلی applyFont برای رفع مشکل فونت در کامپیوتر
-    // این تابع dirty=true را ست می‌کند تا فبریک مجبور به بازخوانی فونت شود
+    // تابع applyFont اصلاح شده برای اطمینان از اعمال فونت
     function applyFont(f) { 
         saveState(); 
         const o = canvas.getActiveObject(); 
         if(o && o.type === 'textbox'){ 
             o.set('fontFamily', f); 
-            // اطمینان از رندر سریع در موتور فبریک
-            o.dirty = true;
-            canvas.requestRenderAll(); 
+            o.set('dirty', true); // اجبار به رندر مجدد
+            canvas.renderAll();
+            // تلاش دوم برای اطمینان در مرورگرهای کند
+            setTimeout(() => canvas.renderAll(), 100); 
         } 
     }
     
-    // منو فقط زمانی باز شود که روی دکمه پالت کلیک شود، نه با صرفاً انتخاب متن
     canvas.on('selection:created', (e) => { menu.style.display = 'none'; });
     canvas.on('selection:updated', (e) => { menu.style.display = 'none'; });
 
@@ -553,13 +583,10 @@
         if (!obj || menu.style.display !== 'flex') return;
         
         const rect = canvas.getElement().getBoundingClientRect();
-        
-        // محاسبه مختصات دقیق باکس متن در صفحه
         const objCoords = obj.getBoundingRect();
         const scaleX = rect.width / canvas.width;
         const scaleY = rect.height / canvas.height;
         
-        // قرارگیری منو دقیقا زیر متن (لبه پایین)
         const menuWidth = 240;
         const leftPos = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuWidth / 2);
         const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 10;
@@ -567,7 +594,6 @@
         menu.style.left = leftPos + 'px';
         menu.style.top = topPos + 'px';
         
-        // جلوگیری از خروج منو از سمت راست یا چپ صفحه
         if(parseInt(menu.style.left) + menuWidth > window.innerWidth) {
             menu.style.left = (window.innerWidth - menuWidth - 10) + 'px';
         }
@@ -576,7 +602,6 @@
         }
     }
 
-    // نکته مهم: در کد قبلی، اینجا یک تابع تکراری applyFont وجود داشت که باعث خرابی فونت در PC می‌شد. حذف شد.
     function changeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fill', c); canvas.renderAll(); } }
     function changeStrokeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('stroke', c); canvas.renderAll(); } }
     function changeStrokeWidth(w) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('strokeWidth', parseFloat(w)); canvas.renderAll(); } }
@@ -635,14 +660,14 @@
         saveState();
         const t = new fabric.Textbox('متن جدید', {
             left: canvas.width/2, top: canvas.height/2, fontFamily: 'Tahoma', fill: '#000', 
-            fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl'
+            fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl',
+            editable: false // پیش‌فرض غیرقابل تایپ
         });
         canvas.add(t).setActiveObject(t);
         document.getElementById('canvasHost').style.pointerEvents = "auto";
     }
 
     let isFocusMode = false;
-    fabric.Object.prototype.objectCaching = false; 
 
     document.getElementById('focusModeBtn').addEventListener('click', () => {
         isFocusMode = !isFocusMode;
@@ -695,7 +720,6 @@
         if(!obj || obj.type !== 'textbox') return;
         saveState();
         
-        // اگر همان عدد قبلی زده شد، به حالت ۱ خطی برگرد
         if (obj.circleMode === num) {
             obj.circleMode = null;
             const idx = fabricTexts.indexOf(obj);
@@ -742,7 +766,6 @@
         lineSelector.style.top = (rect.top + objCoords.top * scaleY - 50) + 'px';
     }
 
-    // --- هسته منطق کشیدگی (بدون تغییر) ---
     function applyMangaCircleLogic(rawText, lineCount) {
         const basePatterns = {
             2: [3, 5], 3: [3, 6, 3], 4: [3, 6, 6, 3], 5: [3, 6, 8, 6, 3],
