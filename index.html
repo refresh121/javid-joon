@@ -23,12 +23,13 @@
         }
         #loginOverlay input.error { border-color: #dc3545; box-shadow: 0 0 10px #dc3545; }
 
-        @font-face { font-family: 'font'; src: url('1/font.ttf'), url('1/font.otf'); font-display: swap; }
-        @font-face { font-family: 'a.gam.azad'; src: url('1/a.gam.azad.ttf'); font-display: swap; }
-        @font-face { font-family: 'bfarnaz'; src: url('1/bfarnaz.ttf'); font-display: swap; }
-        @font-face { font-family: 'afsaneh'; src: url('1/afsaneh.ttf'); font-display: swap; }
-        @font-face { font-family: 'bmorvard'; src: url('1/bmorvard.ttf'); font-display: swap; }
-        @font-face { font-family: 'bhoma'; src: url('1/bhoma.ttf'); font-display: swap; }
+        /* تعریف CSS برای اطمینان، اما JS کار اصلی را انجام می‌دهد */
+        @font-face { font-family: 'font'; src: url('1/font.ttf'); }
+        @font-face { font-family: 'a.gam.azad'; src: url('1/a.gam.azad.ttf'); }
+        @font-face { font-family: 'bfarnaz'; src: url('1/bfarnaz.ttf'); }
+        @font-face { font-family: 'afsaneh'; src: url('1/afsaneh.ttf'); }
+        @font-face { font-family: 'bmorvard'; src: url('1/bmorvard.ttf'); }
+        @font-face { font-family: 'bhoma'; src: url('1/bhoma.ttf'); }
 
         body { font-family: Arial, sans-serif; margin: 0; background: #0b0b0b; color: white; direction: rtl; overflow: auto; height: 100vh; }
         
@@ -73,7 +74,6 @@
         .focus-active #topUI { opacity: 0.5; filter: grayscale(1); }
         .focus-active #cleanWrapper { flex: 100%; } 
 
-        /* --- بخش جدید استایل دایره‌های تنظیم خط --- */
         #line-selector-ui {
             position: fixed; display: none; gap: 8px; z-index: 100000; align-items: center; direction: ltr;
         }
@@ -91,10 +91,7 @@
         }
     </style>
 </head>
-<link rel="preload" href="1/font.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="preload" href="1/a.gam.azad.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="preload" href="1/bfarnaz.ttf" as="font" type="font/ttf" crossorigin>
-<body onload="checkLoginState()">
+<body onload="checkLoginState(); preloadFonts();">
 
 <div id="line-selector-ui">
     <div id="circle-container" style="display: flex; gap: 5px;"></div>
@@ -149,12 +146,12 @@
 <div id="style-menu">
     <div class="menu-section">فونت</div>
     <div class="style-grid">
-        <div class="style-item" onclick="applyFont('font')">عادی</div>
-        <div class="style-item" onclick="applyFont('a.gam.azad')">لرزش</div>
-        <div class="style-item" onclick="applyFont('bfarnaz')">مستطیل</div>
-        <div class="style-item" onclick="applyFont('afsaneh')">فریاد</div>
-        <div class="style-item" onclick="applyFont('bmorvard')">فکر وخورشیدی</div>
-        <div class="style-item" onclick="applyFont('bhoma')">بیرون بالن</div>
+        <div class="style-item" onclick="applyFont('font', 'font.ttf')">عادی</div>
+        <div class="style-item" onclick="applyFont('a.gam.azad', 'a.gam.azad.ttf')">لرزش</div>
+        <div class="style-item" onclick="applyFont('bfarnaz', 'bfarnaz.ttf')">مستطیل</div>
+        <div class="style-item" onclick="applyFont('afsaneh', 'afsaneh.ttf')">فریاد</div>
+        <div class="style-item" onclick="applyFont('bmorvard', 'bmorvard.ttf')">فکر وخورشیدی</div>
+        <div class="style-item" onclick="applyFont('bhoma', 'bhoma.ttf')">بیرون بالن</div>
     </div>
     <div class="menu-section">رنگ و هاله</div>
     <div class="color-palette">
@@ -171,6 +168,29 @@
 <script>
     const LOGIN_PASS = 'Qwjavid77'; 
     const GLOBAL_UPLOAD_LIMIT = 30; 
+
+    // --- سیستم جدید لود فونت (Force Load) ---
+    // این تابع سعی می‌کند فونت‌ها را در پس‌زمینه لود کند
+    function preloadFonts() {
+        const fonts = [
+            { name: 'font', url: '1/font.ttf' },
+            { name: 'a.gam.azad', url: '1/a.gam.azad.ttf' },
+            { name: 'bfarnaz', url: '1/bfarnaz.ttf' },
+            { name: 'afsaneh', url: '1/afsaneh.ttf' },
+            { name: 'bmorvard', url: '1/bmorvard.ttf' },
+            { name: 'bhoma', url: '1/bhoma.ttf' }
+        ];
+        
+        fonts.forEach(f => {
+            const fontFace = new FontFace(f.name, `url(${f.url})`);
+            fontFace.load().then((loadedFont) => {
+                document.fonts.add(loadedFont);
+                console.log(`Font ${f.name} loaded successfully.`);
+            }).catch(err => {
+                console.warn(`Failed to load font ${f.name}. Check if file exists in '1/' folder.`, err);
+            });
+        });
+    }
 
     function checkLoginState() {
         if(localStorage.getItem('isLoggedIn') === 'true') {
@@ -216,7 +236,6 @@
         selection: false, centeredRotation: true, renderOnAddRemove: true
     });
 
-    // مهم: کش آبجکت را خاموش می‌کنیم تا فونت در کامپیوتر سریع‌تر آپدیت شود
     fabric.Object.prototype.objectCaching = false;
 
     fabric.Object.prototype.set({
@@ -225,7 +244,6 @@
         originX: 'center', originY: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
     });
 
-    // --- اسکرول موس برای حرکت (بدون زوم)، کنترل+اسکرول برای زوم ---
     canvas.on('mouse:wheel', function(opt) {
         if (opt.e.ctrlKey) { 
             let delta = opt.e.deltaY;
@@ -331,10 +349,8 @@
         }
     }
 
-    // --- تعریف کنترل‌های اطراف متن ---
     const ctl = fabric.Textbox.prototype.controls;
     
-    // دکمه حذف
     ctl.delete = new fabric.Control({ 
         x: -0.5, y: -0.5, offsetX: -20, offsetY: -20, 
         mouseUpHandler: (e, t) => {
@@ -351,7 +367,6 @@
         render: renderIcon('close') 
     });
     
-    // دکمه استایل/پالت
     ctl.styleToggle = new fabric.Control({
         x: 0.5, y: 0.5, offsetX: 20, offsetY: 20,
         cursorStyle: 'pointer',
@@ -364,13 +379,10 @@
         render: renderIcon('palette') 
     });
 
-    // دکمه چرخش
     ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
 
-    // --- دکمه جدید: ویرایش متن (مداد) ---
-    // فقط با زدن این دکمه متن قابل تایپ می‌شود
     ctl.edit = new fabric.Control({
-        x: 0, y: -0.5, offsetX: 0, offsetY: -25, // موقعیت در بالا وسط
+        x: 0, y: -0.5, offsetX: 0, offsetY: -25, 
         cursorStyle: 'pointer',
         mouseUpHandler: (e, transform) => {
             const target = transform.target;
@@ -383,7 +395,6 @@
         render: renderIcon('edit') 
     });
 
-    // وقتی ویرایش تمام شد (کلیک بیرون)، دوباره قفل شود
     canvas.on('text:editing:exited', (e) => {
         if(e.target) {
             e.target.set('editable', false);
@@ -435,13 +446,12 @@
         const content = updatedLines[currentIdx] || "";
         markersData.push(result);
         
-        // ایجاد متن جدید با قابلیت ویرایش خاموش (editable: false)
         const textObj = new fabric.Textbox(content, {
             left: result.x, top: result.y, fontFamily: 'font', fill: '#000000',
             fontSize: 40, textAlign: 'center', 
             width: content.length < 5 ? 80 : Math.max(result.w || 100, 150), 
             minHeight: 50, direction: 'rtl', 
-            editable: false, // پیش‌فرض غیرقابل تایپ
+            editable: false, 
             splitByGrapheme: false 
         });
         
@@ -562,17 +572,42 @@
     canvas.on('object:scaling', updateMenuPos);
     canvas.on('selection:cleared', () => menu.style.display = 'none');
     
-    // تابع applyFont اصلاح شده برای اطمینان از اعمال فونت
-    function applyFont(f) { 
+    // --- تابع اصلی و جدید اعمال فونت ---
+    // این تابع فایل فونت را دانلود کرده و سپس اعمال می‌کند
+    function applyFont(fontName, fileName) { 
         saveState(); 
-        const o = canvas.getActiveObject(); 
-        if(o && o.type === 'textbox'){ 
-            o.set('fontFamily', f); 
-            o.set('dirty', true); // اجبار به رندر مجدد
-            canvas.renderAll();
-            // تلاش دوم برای اطمینان در مرورگرهای کند
-            setTimeout(() => canvas.renderAll(), 100); 
-        } 
+        const obj = canvas.getActiveObject(); 
+        if(!obj || obj.type !== 'textbox') return;
+
+        // اگر نام فایل داده نشده، فرض می‌کنیم فونت لود شده است
+        if(!fileName) {
+            obj.set('fontFamily', fontName);
+            obj.set('dirty', true);
+            canvas.requestRenderAll();
+            return;
+        }
+
+        // ساخت مسیر فایل
+        const fontPath = `1/${fileName}`;
+        
+        // تلاش برای لود کردن فونت
+        const fontFace = new FontFace(fontName, `url(${fontPath})`);
+        
+        fontFace.load().then(loadedFont => {
+            // اضافه کردن فونت به داکیومنت
+            document.fonts.add(loadedFont);
+            
+            // اعمال روی آبجکت
+            obj.set('fontFamily', fontName);
+            
+            // رندر مجدد با کمی تاخیر برای اطمینان
+            obj.set('dirty', true);
+            canvas.requestRenderAll();
+            setTimeout(() => canvas.requestRenderAll(), 50);
+        }).catch(error => {
+            console.error('Font loading failed:', error);
+            alert('خطا در لود فونت. بررسی کنید فایل ' + fileName + ' در پوشه 1 موجود باشد.');
+        });
     }
     
     canvas.on('selection:created', (e) => { menu.style.display = 'none'; });
@@ -661,7 +696,7 @@
         const t = new fabric.Textbox('متن جدید', {
             left: canvas.width/2, top: canvas.height/2, fontFamily: 'Tahoma', fill: '#000', 
             fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl',
-            editable: false // پیش‌فرض غیرقابل تایپ
+            editable: false
         });
         canvas.add(t).setActiveObject(t);
         document.getElementById('canvasHost').style.pointerEvents = "auto";
@@ -691,8 +726,6 @@
 
     const originalDrawUI = drawUI;
     drawUI = function() { if (!isFocusMode) originalDrawUI(); };
-
-    // --- بخش جدید: منطق دایره‌نویسی و کنترلر دایره‌ای ---
 
     let currentRangeStart = 2;
     const lineSelector = document.getElementById('line-selector-ui');
@@ -819,4 +852,4 @@
     }
 </script>
 </body>
-    </html>
+</html>
