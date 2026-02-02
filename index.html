@@ -324,7 +324,8 @@
             if (!pages[i]) {
                 pages[i] = { 
                     originalSrc: "", cleanSrc: "", 
-                    markersData: [], textInputValue: "", 
+                    markersData: [], 
+                    // textInputValue: "", // حذف شد تا متن سراسری بماند
                     fabricJSON: JSON.stringify(canvas.toJSON()) 
                 };
             }
@@ -342,7 +343,7 @@
         if (pages[currentPageIdx]) {
             pages[currentPageIdx].markersData = [...markersData];
             pages[currentPageIdx].fabricJSON = JSON.stringify(canvas.toJSON());
-            pages[currentPageIdx].textInputValue = textInput.value;
+            // pages[currentPageIdx].textInputValue = textInput.value; // حذف شد تا متن در صفحات ذخیره نشود
         }
     }
 
@@ -352,7 +353,11 @@
         const p = pages[idx];
         originalImg.src = p.originalSrc || "";
         cleanImg.src = p.cleanSrc || "";
-        textInput.value = p.textInputValue || "";
+        
+        // --- تغییر: حذف کدی که متن را ریست می‌کرد تا متن سراسری بماند ---
+        // textInput.value = p.textInputValue || ""; 
+        // -------------------------------------------------------------
+        
         markersData = p.markersData || [];
         undoStack = [];
         
@@ -495,12 +500,21 @@
         // --- تغییر مهم: حذف خطوط خالی برای شمارش بالن‌ها ---
         const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
         
+        // محاسبه افست سراسری (تعداد بالن‌های صفحات قبل)
+        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
+
         fabricTexts.forEach((textObj, i) => {
-            if(lines[i] !== undefined) {
+            // ایندکس واقعی در آرایه خطوط = تعداد بالن‌های صفحات قبل + ایندکس بالن فعلی در این صفحه
+            const globalIndex = globalOffset + i;
+
+            if(lines[globalIndex] !== undefined) {
+                // آپدیت متن اصلی برای جلوگیری از بهم ریختگی موقع تغییر مود دایره‌ای
+                textObj.originalText = lines[globalIndex];
+
                 if(textObj.circleMode) {
-                    textObj.set('text', applyMangaCircleLogic(lines[i], textObj.circleMode));
+                    textObj.set('text', applyMangaCircleLogic(lines[globalIndex], textObj.circleMode));
                 } else {
-                    textObj.set('text', lines[i]);
+                    textObj.set('text', lines[globalIndex]);
                 }
                 if(textObj.text.length < 10) textObj.set('width', 100);
                 canvas.renderAll();
@@ -509,6 +523,17 @@
         textInput.style.height = 'auto';
         textInput.style.height = textInput.scrollHeight + 'px';
     });
+
+    // --- تابع جدید برای محاسبه مجموع مارکرها در صفحات قبل ---
+    function getGlobalMarkerOffset(pageIdx) {
+        let count = 0;
+        for(let i = 0; i < pageIdx; i++) {
+            if(pages[i] && pages[i].markersData) {
+                count += pages[i].markersData.length;
+            }
+        }
+        return count;
+    }
 
     originalImg.onload = () => {
         floodCanvas.width = originalImg.naturalWidth;
@@ -535,18 +560,22 @@
         const result = runFloodFill(x, y);
         
         const currentIdx = markersData.length;
+        // محاسبه ایندکس سراسری برای پیدا کردن خط درست در متن
+        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
+        const globalIndex = globalOffset + currentIdx;
+
         // اینجا هم فیلتر میکنیم تا اگر کاربر چند اینتر زده، متن درست انتخاب شود
         const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
         
         // اگر متنی برای این بالن وجود ندارد، یک خط جدید به تکست باکس اضافه میکنیم
-        if (lines.length <= currentIdx) {
+        if (lines.length <= globalIndex) {
             // اضافه کردن به خود ولیو اصلی تکست باکس
             textInput.value += (textInput.value ? "\n" : "");
         }
         
         // دوباره میخوانیم تا متن جدید را بگیریم
         const updatedLines = textInput.value.split('\n').filter(line => line.trim() !== '');
-        const content = updatedLines[currentIdx] || "";
+        const content = updatedLines[globalIndex] || "";
         markersData.push(result);
         
         const textObj = new fabric.Textbox(content, {
@@ -558,6 +587,9 @@
             splitByGrapheme: false 
         });
         
+        // --- ذخیره متن اصلی (Fix برای مشکل دایره‌ها) ---
+        textObj.originalText = content; 
+
         fabricTexts.push(textObj);
         canvas.add(textObj);
         drawUI();
@@ -612,6 +644,10 @@
     function drawUI() {
         document.getElementById('markerOverlay').innerHTML = '';
         if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
+        
+        // محاسبه افست سراسری برای نمایش عدد درست روی دایره‌ها
+        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
+
         markersData.forEach((data, i) => {
             fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
             if(data.isCircle) {
@@ -624,7 +660,8 @@
             dot.className = 'marker';
             dot.style.left = (data.x / originalImg.naturalWidth * 100) + '%';
             dot.style.top = (data.y / originalImg.naturalHeight * 100) + '%';
-            dot.innerText = i + 1;
+            // نمایش شماره به صورت سراسری (ادامه شماره‌های صفحات قبل)
+            dot.innerText = globalOffset + i + 1;
             dot.onclick = (e) => { e.stopPropagation(); removeMarker(i); };
             document.getElementById('markerOverlay').appendChild(dot);
         });
@@ -783,6 +820,8 @@
             fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl',
             editable: false
         });
+        // مقدار اولیه به originalText داده شد
+        t.originalText = 'متن جدید'; 
         canvas.add(t).setActiveObject(t);
         document.getElementById('canvasHost').style.pointerEvents = "auto";
     }
@@ -838,17 +877,18 @@
         if(!obj || obj.type !== 'textbox') return;
         saveState();
         
+        // --- تغییر اساسی: استفاده از متن ذخیره شده (originalText) برای جلوگیری از باگ تغییر متن ---
+        // اگر originalText موجود نبود، از متن فعلی استفاده کن و کاراکترهای اضافی را پاک کن
+        let baseText = obj.originalText || obj.text.replace(/ـ/g, '').replace(/\n/g, ' ');
+
         if (obj.circleMode === num) {
             obj.circleMode = null;
-            const idx = fabricTexts.indexOf(obj);
-            const originalLines = textInput.value.split('\n');
-            obj.set('text', originalLines[idx] || obj.text.replace(/ـ/g, '').replace(/\n/g, ' '));
+            // وقتی دایره خاموش میشه، متن اصلی رو برگردون
+            obj.set('text', baseText);
         } else {
             obj.circleMode = num;
-            const idx = fabricTexts.indexOf(obj);
-            const originalLines = textInput.value.split('\n');
-            const cleanText = originalLines[idx] || obj.text.replace(/ـ/g, '').replace(/\n/g, ' ');
-            obj.set('text', applyMangaCircleLogic(cleanText, num));
+            // وقتی دایره روشن میشه، تابع رو روی متن اصلی اعمال کن
+            obj.set('text', applyMangaCircleLogic(baseText, num));
         }
         
         canvas.renderAll();
