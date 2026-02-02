@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>داشبورد کاربری</title>
+    <style>
+        body { background: #0f0f0f; color: white; font-family: Tahoma; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        
+        /* باکس توکن */
+        .token-info { background: #1a1a1a; padding: 15px 30px; border-radius: 12px; border: 1px solid #333; margin-bottom: 30px; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .token-count { color: #00ffcc; font-weight: bold; }
+
+        /* دکمه با نوار رنگی متحرک */
+        .btn-container { position: relative; padding: 5px; border-radius: 12px; background: linear-gradient(90deg, #ff0000, #ffea00, #00ff00, #001aff, #ff00f7, #ff0000); background-size: 400%; animation: moveGradient 5s linear infinite; }
+        
+        .enter-btn { background: #0f0f0f; color: white; border: none; padding: 15px 40px; border-radius: 8px; font-size: 1.3rem; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .enter-btn:hover { background: transparent; }
+
+        @keyframes moveGradient { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+
+        /* متن توضیحات */
+        .warning-text { max-width: 400px; text-align: center; line-height: 1.8; margin-top: 30px; color: #aaa; font-size: 0.9rem; padding: 20px; border-top: 1px solid #222; }
+        .highlight { color: #ff4444; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="token-info">
+        در حال حاضر شما <span class="token-count" id="tokenDisplay">..</span> توکن دارید
+    </div>
+
+    <div class="btn-container">
+        <button class="enter-btn" onclick="startEditor()">ورود به ویرایشگر</button>
+    </div>
+
+    <div class="warning-text">
+        در حال حاضر بخاطر شلوغی سرور و قیمت بالای سرور کاربران محدود شده‌اند. 
+        شما برای هر چپتر <span class="highlight">۳ ساعت</span> مهلت دارید تا تایپ خود را انجام دهید. 
+        توجه کنید بعد از ۳ ساعت توکن شما می‌سوزد و به این صفحه باز می‌گردید. 
+        پس سعی کنید وقتی تایم آزادی دارید شروع به تایپ کنید.
+    </div>
+
+    <script>
+        // دریافت تعداد توکن از سرور (در مرحله اتصال به سرور کامل می‌شود)
+        document.getElementById('tokenDisplay').innerText = "10"; 
+
+        function startEditor() {
+            window.location.href = "/index.html"; // هدایت به ویرایشگر
+        }
+    </script>
+</body>
+</html>
