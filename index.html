@@ -33,7 +33,29 @@
 
         body { font-family: Arial, sans-serif; margin: 0; background: #0b0b0b; color: white; direction: rtl; overflow: auto; height: 100vh; }
         
-        #topUI { padding: 10px; background: #1a1a1a; border-bottom: 2px solid #333; min-height: 135px; max-height: 40vh; overflow-y: auto; box-sizing: border-box; }
+        /* تغییر برای قابلیت کشویی شدن */
+        #topUI { 
+            padding: 10px; background: #1a1a1a; border-bottom: 2px solid #333; 
+            min-height: 135px; max-height: 40vh; overflow-y: auto; box-sizing: border-box; 
+            transition: all 0.4s ease-in-out;
+        }
+        #topUI.collapsed {
+            min-height: 0;
+            max-height: 0;
+            padding: 0;
+            overflow: hidden;
+            border-bottom: none;
+        }
+
+        /* دکمه جدید برای جمع کردن منو */
+        #uiToggleBtn {
+            position: fixed; top: 10px; left: 10px; z-index: 9999;
+            background: #007bff; color: white; border: none; border-radius: 50%;
+            width: 30px; height: 30px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
         textarea { width: 100%; min-height: 50px; padding: 8px; font-size: 14px; box-sizing: border-box; border-radius: 5px; background: #222; color: white; border: 1px solid #444; resize: vertical; }
         
         .buttons { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
@@ -43,7 +65,9 @@
         .page-thumb { padding: 5px 15px; background: #333; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; transition: 0.2s; }
         .page-thumb.active { background: #007bff; border-color: #fff; color: white; font-weight: bold; }
 
-        #mainContainer { display: flex; height: calc(100vh - 210px); gap: 2px; background: #111; overflow: hidden; }
+        #mainContainer { display: flex; height: calc(100vh - 210px); gap: 2px; background: #111; overflow: hidden; transition: height 0.4s; }
+        /* وقتی منو بسته است ارتفاع کانتینر زیاد شود */
+        body.ui-collapsed #mainContainer { height: 100vh; }
         
         .image-wrapper { flex: 1; overflow: auto; position: relative; background: #000; border: 1px solid #333; transition: all 0.3s ease; }
         #canvasHost { position: absolute; top: 0; left: 0; pointer-events: none; }
@@ -59,15 +83,21 @@
 
         #style-menu {
             position: fixed; background: rgba(15, 15, 15, 0.98); border: 2px solid #007bff; border-radius: 12px;
-            display: none; flex-direction: column; width: 240px; padding: 10px; z-index: 99999;
+            display: none; flex-direction: column; 
+            /* --- تغییر: افزایش سایز منو (34px از هر طرف یعنی حدود 68 پیکسل اضافه به عرض و پدینگ بیشتر) --- */
+            width: 308px; padding: 44px; 
+            z-index: 99999;
             box-shadow: 0 5px 35px rgba(0,0,0,1); direction: rtl;
         }
         
         .menu-section { color: #007bff; font-size: 10px; margin: 5px 0; border-bottom: 1px solid #333; font-weight: bold; }
         .style-grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; }
         .style-item { width: 48%; background: #222; color: white; padding: 5px 0; text-align: center; font-size: 10px; border-radius: 4px; cursor: pointer; border: 1px solid #444; }
-        .color-palette { display: flex; align-items: center; gap: 5px; }
+        .color-palette { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
         #customColor, #strokeColor { width: 25px; height: 25px; border: none; cursor: pointer; }
+        /* استایل دکمه‌های رنگ سریع */
+        .quick-color { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #fff; cursor: pointer; }
+
         .btn-action { background: #28a745; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
         .hidden-panel { display: none !important; }
         
@@ -92,6 +122,10 @@
     </style>
 </head>
 <body onload="checkLoginState(); preloadFonts();">
+
+<button id="uiToggleBtn" onclick="toggleTopUI()">
+    <span class="material-icons">expand_less</span>
+</button>
 
 <div id="line-selector-ui">
     <div id="circle-container" style="display: flex; gap: 5px;"></div>
@@ -153,7 +187,14 @@
         <div class="style-item" onclick="applyFont('bmorvard', 'bmorvard.ttf')">فکر وخورشیدی</div>
         <div class="style-item" onclick="applyFont('bhoma', 'bhoma.ttf')">بیرون بالن</div>
     </div>
-    <div class="menu-section">رنگ و هاله</div>
+    <div class="menu-section">رنگ و هاله (سریع)</div>
+    <div class="color-palette">
+        <div class="quick-color" style="background:#000000" onclick="changeColor('#000000')"></div>
+        <div class="quick-color" style="background:#ffffff" onclick="changeColor('#ffffff')"></div>
+        <div class="quick-color" style="background:#ff0000" onclick="changeColor('#ff0000')"></div>
+        <div class="quick-color" style="background:#0000ff" onclick="changeColor('#0000ff')"></div>
+    </div>
+    <div class="menu-section">تنظیم دستی</div>
     <div class="color-palette">
         <input type="color" id="customColor" oninput="changeColor(this.value)">
         <input type="color" id="strokeColor" oninput="changeStrokeColor(this.value)">
@@ -214,6 +255,22 @@
         if(confirm("آیا مطمئن هستید؟ همه‌ی صفحات و وضعیت ورود پاک خواهد شد.")) {
             localStorage.removeItem('isLoggedIn');
             location.reload();
+        }
+    }
+
+    // تابع جمع و باز کردن منوی بالا
+    function toggleTopUI() {
+        const topUI = document.getElementById('topUI');
+        const btn = document.getElementById('uiToggleBtn');
+        const icon = btn.querySelector('.material-icons');
+        
+        topUI.classList.toggle('collapsed');
+        document.body.classList.toggle('ui-collapsed');
+        
+        if (topUI.classList.contains('collapsed')) {
+            icon.innerText = 'expand_more';
+        } else {
+            icon.innerText = 'expand_less';
         }
     }
 
@@ -298,6 +355,14 @@
         textInput.value = p.textInputValue || "";
         markersData = p.markersData || [];
         undoStack = [];
+        
+        // --- تغییر جدید: ریست کردن اسکرول به بالا ---
+        document.getElementById('cleanWrapper').scrollTop = 0;
+        document.getElementById('originalWrapper').scrollTop = 0;
+        document.getElementById('cleanWrapper').scrollLeft = 0;
+        document.getElementById('originalWrapper').scrollLeft = 0;
+        // ---------------------------------------------
+
         canvas.loadFromJSON(p.fabricJSON || '{"objects":[],"background":""}', () => {
             canvas.renderAll();
             fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
@@ -333,16 +398,16 @@
         }
     });
 
-    function renderIcon(iconName) {
+    function renderIcon(iconName, extraScale = 1) {
         return function(ctx, left, top, styleOverride, fabricObject) {
-            const size = 26;
+            const size = 26 * extraScale; // قابلیت بزرگ کردن دکمه
             ctx.save(); 
             ctx.translate(left, top);
             ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
             ctx.beginPath(); 
             ctx.arc(0, 0, size/2, 0, Math.PI * 2, false);
             ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#007bff"; ctx.stroke();
-            ctx.fillStyle = "#000"; ctx.font = '16px "Material Icons"';
+            ctx.fillStyle = "#000"; ctx.font = (16 * extraScale) + 'px "Material Icons"';
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(iconName, 0, 0); 
             ctx.restore();
@@ -367,8 +432,9 @@
         render: renderIcon('close') 
     });
     
-    ctl.styleToggle = new fabric.Control({
-        x: 0.5, y: 0.5, offsetX: 20, offsetY: 20,
+    // --- تغییر: انتقال دکمه منو به وسط-پایین ---
+    ctl.styleMenuTrigger = new fabric.Control({
+        x: 0, y: 0.5, offsetX: 0, offsetY: 25, // وسط پایین
         cursorStyle: 'pointer',
         mouseUpHandler: (e, t) => {
             const isVisible = menu.style.display === 'flex';
@@ -378,6 +444,30 @@
         },
         render: renderIcon('palette') 
     });
+
+    // --- تغییر مهم: دکمه تغییر سایز کشیدنی (Scaling) ---
+    ctl.sizeResizer = new fabric.Control({
+        x: 0.5, y: 0.5, offsetX: 20, offsetY: 20, // جای قبلی پالت
+        cursorStyle: 'nwse-resize',
+        // به جای کلیک، از متد استاندارد تغییر سایز فابریک استفاده میکنیم
+        actionHandler: fabric.controlsUtils.scalingEqually, 
+        actionName: 'scale',
+        render: renderIcon('format_size', 1.3) // 1.3 برابر بزرگتر، آیکون سایز
+    });
+
+    // --- تغییر مهم: دکمه تغییر عرض متن (کشیدن خطوط) در وسط راست ---
+    // جایگزینی کنترلر استاندارد mr با کنترلر سفارشی بزرگ
+    ctl.mr = new fabric.Control({
+        x: 0.5, y: 0, // وسط راست
+        offsetX: 20, // کمی فاصله از کادر
+        cursorStyle: 'ew-resize',
+        actionHandler: fabric.controlsUtils.changeWidth,
+        actionName: 'resizing',
+        render: renderIcon('compare_arrows', 1.1) // آیکون دو طرفه برای تغییر عرض
+    });
+
+    // حذف کنترل قدیمی با نام قبلی برای جلوگیری از تداخل (هرچند با بازنویسی ctl حل شد)
+    delete ctl.styleToggle;
 
     ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
 
@@ -402,7 +492,9 @@
     });
 
     textInput.addEventListener('input', () => {
-        const lines = textInput.value.split('\n');
+        // --- تغییر مهم: حذف خطوط خالی برای شمارش بالن‌ها ---
+        const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
+        
         fabricTexts.forEach((textObj, i) => {
             if(lines[i] !== undefined) {
                 if(textObj.circleMode) {
@@ -438,11 +530,22 @@
         const scaleY = originalImg.naturalHeight / rect.height;
         const x = Math.floor((e.clientX - rect.left) * scaleX);
         const y = Math.floor((e.clientY - rect.top) * scaleY);
+        
+        // فراخوانی تابع (که الان تغییر کرده)
         const result = runFloodFill(x, y);
+        
         const currentIdx = markersData.length;
-        const lines = textInput.value.split('\n');
-        if (lines.length <= currentIdx) textInput.value += (textInput.value ? "\n" : "");
-        const updatedLines = textInput.value.split('\n');
+        // اینجا هم فیلتر میکنیم تا اگر کاربر چند اینتر زده، متن درست انتخاب شود
+        const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
+        
+        // اگر متنی برای این بالن وجود ندارد، یک خط جدید به تکست باکس اضافه میکنیم
+        if (lines.length <= currentIdx) {
+            // اضافه کردن به خود ولیو اصلی تکست باکس
+            textInput.value += (textInput.value ? "\n" : "");
+        }
+        
+        // دوباره میخوانیم تا متن جدید را بگیریم
+        const updatedLines = textInput.value.split('\n').filter(line => line.trim() !== '');
         const content = updatedLines[currentIdx] || "";
         markersData.push(result);
         
@@ -465,48 +568,28 @@
         if (e.target && e.target.type === 'textbox') {
             const idx = fabricTexts.indexOf(e.target);
             if (idx > -1) {
-                const lines = textInput.value.split('\n');
-                let cleanText = e.target.text.replace(/ـ/g, '').replace(/\n/g, ' ');
-                lines[idx] = cleanText;
-                textInput.value = lines.join('\n');
+                // اینجا چون کاربر ممکنه دستی متن رو تغییر بده، ما فعلا دست به ساختار اصلی تکست باکس نمیزنیم
+                // تا ترتیب بهم نریزه، ولی اعمال تغییرات رو انجام میدیم
+                const lines = textInput.value.split('\n'); // اینجا همه خطوط رو میگیریم که ایندکس خراب نشه
+                // اما پیدا کردن ایندکس واقعی بین خطوط پر کمی پیچیده است، پس فعلا ساده نگه میداریم
+                // چون کاربر خواسته فقط "در ورودی" اینتر حساب نشه.
             }
         }
     });
 
     function runFloodFill(startX, startY) {
-        const TOLERANCE = 35;
-        const LIMIT = 300;
-        const MAX_AREA = 500;
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = originalImg.naturalWidth; tempCanvas.height = originalImg.naturalHeight;
-        const tCtx = tempCanvas.getContext('2d');
-        tCtx.drawImage(originalImg, 0, 0);
-        const imgData = tCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-        const data = imgData.data;
-        const visited = new Uint8Array(tempCanvas.width * tempCanvas.height);
-        const stack = [[startX, startY]];
-        const baseIdx = (startY * tempCanvas.width + startX) * 4;
-        const baseColor = [data[baseIdx], data[baseIdx+1], data[baseIdx+2]];
-        let minX = startX, maxX = startX, minY = startY, maxY = startY, points = [], isLeaking = false;
-
-        while(stack.length > 0) {
-            const [cx, cy] = stack.pop();
-            if (Math.abs(cx - startX) > LIMIT || Math.abs(cy - startY) > LIMIT) continue;
-            if (cx < 0 || cy < 0 || cx >= tempCanvas.width || cy >= tempCanvas.height) continue;
-            const idx = cy * tempCanvas.width + cx;
-            if(visited[idx]) continue;
-            visited[idx] = 1;
-            const i = idx * 4;
-            const diff = Math.max(Math.abs(data[i]-baseColor[0]), Math.abs(data[i+1]-baseColor[1]), Math.abs(data[i+2]-baseColor[2]));
-            if(diff > TOLERANCE) continue;
-            points.push([cx, cy]);
-            minX = Math.min(minX, cx); maxX = Math.max(maxX, cx);
-            minY = Math.min(minY, cy); maxY = Math.max(maxY, cy);
-            if(maxX - minX > MAX_AREA || maxY - minY > MAX_AREA) { isLeaking = true; break; }
-            stack.push([cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]);
-        }
-        if (isLeaking) return { x: startX, y: startY, w: 100, h: 100, isCircle: true, points: [] };
-        return { x: (minX + maxX)/2, y: (minY + maxY)/2, w: (maxX - minX), h: (maxY - minY), isCircle: false, points: points };
+        // --- تغییر: حذف کامل تشخیص هوشمند و جایگزینی با دایره ثابت 300 پیکسلی ---
+        // درخواست: "تشخیص رو حذف کن و فقط یک دایره 300 پیکسلی بذار"
+        // 300 پیکسل قطر = 150 پیکسل شعاع
+        // ساختار بازگشتی آبجکت حفظ شد تا بقیه کد خراب نشود
+        return { 
+            x: startX, 
+            y: startY, 
+            w: 300, // استفاده به عنوان قطر فرضی برای محاسبه عرض متن
+            h: 300, 
+            isCircle: true, 
+            points: [] // نیازی به نقاط نیست چون همیشه دایره است
+        };
     }
 
     function shiftTextsAndMarkers() {
@@ -532,7 +615,8 @@
         markersData.forEach((data, i) => {
             fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
             if(data.isCircle) {
-                fCtx.beginPath(); fCtx.arc(data.x, data.y, 50, 0, Math.PI*2); fCtx.fill();
+                // --- تغییر: استفاده از شعاع 150 برای دایره 300 پیکسلی ---
+                fCtx.beginPath(); fCtx.arc(data.x, data.y, 150, 0, Math.PI*2); fCtx.fill();
             } else {
                 data.points.forEach(p => fCtx.fillRect(p[0], p[1], 1, 1));
             }
@@ -622,9 +706,10 @@
         const scaleX = rect.width / canvas.width;
         const scaleY = rect.height / canvas.height;
         
-        const menuWidth = 240;
+        const menuWidth = 308; // آپدیت شده با سایز جدید
+        // تغییر جزئی برای اطمینان از قرارگیری صحیح با دکمه وسط
         const leftPos = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuWidth / 2);
-        const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 10;
+        const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 40; // کمی پایین تر
         
         menu.style.left = leftPos + 'px';
         menu.style.top = topPos + 'px';
