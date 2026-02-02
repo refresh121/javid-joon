@@ -207,8 +207,25 @@
 </div>
 
 <script>
-    const LOGIN_PASS = 'Qwjavid77'; 
-    const GLOBAL_UPLOAD_LIMIT = 30; 
+async function checkPass() {
+    const userInput = document.getElementById('passInput').value;
+    try {
+        const response = await fetch('/verify-chapter', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: userInput })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert("تایید شد! توکن باقی‌مانده: " + result.remaining);
+            document.getElementById('loginOverlay').remove();
+        } else {
+            alert(result.message);
+        }
+    } catch (e) {
+        alert("خطا در اتصال به سرور!");
+    }
+}
 
     // --- سیستم جدید لود فونت (Force Load) ---
     // این تابع سعی می‌کند فونت‌ها را در پس‌زمینه لود کند
@@ -978,3 +995,4 @@
 </script>
 </body>
 </html>
+
