@@ -304,6 +304,26 @@
 </div>
 
 <script>
+
+    function checkSessionValid() {
+  const auth = JSON.parse(localStorage.getItem("mangaEditorAuth") || "null");
+  if (!auth || !auth.loggedIn) {
+    window.location.href = "login.html";
+    return false;
+  }
+  const sess = JSON.parse(localStorage.getItem("mangaEditorSession") || "null");
+  if (!sess || Date.now() > sess.expire) {
+    localStorage.removeItem("mangaEditorSession");
+    localStorage.removeItem('isLoggedIn');
+    alert("زمان ویرایش شما به پایان رسید. لطفاً دوباره از داشبورد شروع کنید.");
+    window.location.href = "dashboard.html";
+    return false;
+  }
+  // نمایش تایمر (اختیاری)
+  startSessionTimer(sess.expire);
+  return true;
+    }
+    
     const LOGIN_PASS = 'Qwjavid77'; 
     const GLOBAL_UPLOAD_LIMIT = 30; 
 
@@ -1089,3 +1109,4 @@
 </script>
 </body>
 </html>
+
