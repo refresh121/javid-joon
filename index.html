@@ -23,7 +23,6 @@
         }
         #loginOverlay input.error { border-color: #dc3545; box-shadow: 0 0 10px #dc3545; }
 
-        /* تعریف CSS برای اطمینان، اما JS کار اصلی را انجام می‌دهد */
         @font-face { font-family: 'font'; src: url('1/font.ttf'); }
         @font-face { font-family: 'a.gam.azad'; src: url('1/a.gam.azad.ttf'); }
         @font-face { font-family: 'bfarnaz'; src: url('1/bfarnaz.ttf'); }
@@ -32,17 +31,13 @@
         @font-face { font-family: 'bhoma'; src: url('1/bhoma.ttf'); }
 
         body { font-family: Arial, sans-serif; margin: 0; background: #0b0b0b; color: white; direction: rtl; overflow: auto; height: 100vh; }
-        
-        <div id="sessionStatus" style="position: fixed; top: 10px; left: 10px; z-index: 9999; display: flex; gap: 10px;">
-    <button onclick="location.href='dashboard.html'" style="background: #333; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">داشبورد</button>
-    <div id="timerDisplay" style="background: rgba(255,0,0,0.7); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">03:00:00</div>
-</div>
-        
+   
         /* تغییر برای قابلیت کشویی شدن */
         #topUI { 
             padding: 10px; background: #1a1a1a; border-bottom: 2px solid #333; 
             min-height: 135px; max-height: 40vh; overflow-y: auto; box-sizing: border-box; 
             transition: all 0.4s ease-in-out;
+            margin-top: 50px; /* فاصله برای نوار تایمر جدید */
         }
         #topUI.collapsed {
             min-height: 0;
@@ -54,7 +49,7 @@
 
         /* دکمه جدید برای جمع کردن منو */
         #uiToggleBtn {
-            position: fixed; top: 10px; left: 10px; z-index: 9999;
+            position: fixed; top: 60px; left: 10px; z-index: 9999;
             background: #007bff; color: white; border: none; border-radius: 50%;
             width: 30px; height: 30px; cursor: pointer; display: flex;
             align-items: center; justify-content: center; font-weight: bold;
@@ -70,9 +65,8 @@
         .page-thumb { padding: 5px 15px; background: #333; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; transition: 0.2s; }
         .page-thumb.active { background: #007bff; border-color: #fff; color: white; font-weight: bold; }
 
-        #mainContainer { display: flex; height: calc(100vh - 210px); gap: 2px; background: #111; overflow: hidden; transition: height 0.4s; }
-        /* وقتی منو بسته است ارتفاع کانتینر زیاد شود */
-        body.ui-collapsed #mainContainer { height: 100vh; }
+        #mainContainer { display: flex; height: calc(100vh - 260px); gap: 2px; background: #111; overflow: hidden; transition: height 0.4s; }
+        body.ui-collapsed #mainContainer { height: calc(100vh - 50px); }
         
         .image-wrapper { flex: 1; overflow: auto; position: relative; background: #000; border: 1px solid #333; transition: all 0.3s ease; }
         #canvasHost { position: absolute; top: 0; left: 0; pointer-events: none; }
@@ -89,7 +83,6 @@
         #style-menu {
             position: fixed; background: rgba(15, 15, 15, 0.98); border: 2px solid #007bff; border-radius: 12px;
             display: none; flex-direction: column; 
-            /* --- تغییر: افزایش سایز منو (34px از هر طرف یعنی حدود 68 پیکسل اضافه به عرض و پدینگ بیشتر) --- */
             width: 308px; padding: 44px; 
             z-index: 99999;
             box-shadow: 0 5px 35px rgba(0,0,0,1); direction: rtl;
@@ -100,7 +93,6 @@
         .style-item { width: 48%; background: #222; color: white; padding: 5px 0; text-align: center; font-size: 10px; border-radius: 4px; cursor: pointer; border: 1px solid #444; }
         .color-palette { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
         #customColor, #strokeColor { width: 25px; height: 25px; border: none; cursor: pointer; }
-        /* استایل دکمه‌های رنگ سریع */
         .quick-color { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #fff; cursor: pointer; }
 
         .btn-action { background: #28a745; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
@@ -124,86 +116,16 @@
             width: 24px; height: 24px; border-radius: 50%; background: #333; color: white;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
-
-        /* ── استایل‌های جدید اضافه شده برای توکن و دکمه بزرگ ── */
-        #token-info {
-            position: fixed;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            padding: 12px 28px;
-            border-radius: 12px;
-            border: 1px solid #444;
-            font-size: 1.1rem;
-            z-index: 9998;
-            box-shadow: 0 4px 20px rgba(0,170,255,0.2);
-        }
-
-        #big-enter-editor {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 360px;
-            height: 140px;
-            font-size: 1.9rem;
-            font-weight: bold;
-            color: white;
-            background: #0066cc;
-            border: none;
-            border-radius: 999px;
-            cursor: pointer;
-            z-index: 9997;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            transition: all 0.3s;
-        }
-
-        #big-enter-editor:hover {
-            transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 0 15px 50px rgba(0,170,255,0.5);
-        }
-
-        .glowing-border {
-            position: absolute;
-            inset: -10px;
-            border-radius: 999px;
-            pointer-events: none;
-            background: conic-gradient(#00aaff, #ff00aa, #00ffaa, #aaff00, #ffaa00, #ff0000, #00aaff);
-            animation: rotate-border 4s linear infinite;
-            filter: blur(14px);
-            opacity: 0.8;
-            z-index: -1;
-        }
-
-        @keyframes rotate-border {
-            100% { transform: rotate(360deg); }
-        }
-
-        .limit-text {
-            position: fixed;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: 90%;
-            text-align: center;
-            font-size: 1.05rem;
-            line-height: 1.6;
-            color: #ccc;
-            z-index: 9996;
-            background: rgba(0,0,0,0.6);
-            padding: 16px 32px;
-            border-radius: 12px;
-        }
-
     </style>
 </head>
-<body onload="checkSessionValid(); checkLoginState(); preloadFonts();">
+<body onload="checkLoginState(); preloadFonts();">
 
-<!-- دکمه بازگشت به داشبورد -->
-<button onclick="window.location.href='dashboard.html'" style="position: fixed; top: 50px; left: 10px; z-index: 9999; background:#444; color:#0af; border:1px solid #0af; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold;">
-    بازگشت به داشبورد
-</button>
+<div id="sessionStatus" style="position: fixed; top: 0; left: 0; width: 100%; height: 40px; background: #000; z-index: 99999; display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #333; box-sizing: border-box;">
+    <button onclick="exitToDashboard()" style="background: #dc3545; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 15px;">خروج به داشبورد</button>
+    <div style="flex: 1;"></div>
+    <div id="timerDisplay" style="color: #00ffcc; font-family: monospace; font-size: 18px; font-weight: bold;">03:00:00</div>
+    <div style="color: #aaa; font-size: 12px; margin-left: 10px;">زمان باقی‌مانده</div>
+</div>
 
 <button id="uiToggleBtn" onclick="toggleTopUI()">
     <span class="material-icons">expand_less</span>
@@ -212,21 +134,6 @@
 <div id="line-selector-ui">
     <div id="circle-container" style="display: flex; gap: 5px;"></div>
     <div class="line-next-btn" onclick="toggleLineRange()"> &gt; </div>
-</div>
-
-<!-- بخش جدید – نمایش توکن و دکمه بزرگ ورود به ویرایشگر -->
-<div id="token-info">در حال حاضر شما <strong>۱۰</strong> توکن دارید</div>
-
-<button id="big-enter-editor">
-    <div class="glowing-border"></div>
-    ورود به ویرایشگر
-</button>
-
-<div class="limit-text">
-در حال حاضر بخاطر شلوغی سرور و قیمت بالای سرور کاربران محدود شده ان،<br>
-شما برایدهر چپتر ۳ ساعت مهلت دارید تا تایپ خودتون رو انجام بدید.<br>
-توجه کنید بعد ۳ ساعت توکن شما میسوزه و به این صفحه باز میگردید<br>
-پس سعی کنید وقتی کاری ندارید شروع به تایپ کنید.
 </div>
 
 <div id="loginOverlay">
@@ -304,809 +211,787 @@
 </div>
 
 <script>
+// --- بخش مدیریت زمان و آپلود ---
+const username = localStorage.getItem('manga_user') || 'guest';
+let mainUploads = parseInt(localStorage.getItem('mainCount')) || 0;
+let cleanUploads = parseInt(localStorage.getItem('cleanCount')) || 0;
 
-    function checkSessionValid() {
-  const auth = JSON.parse(localStorage.getItem("mangaEditorAuth") || "null");
-  if (!auth || !auth.loggedIn) {
-    window.location.href = "login.html";
-    return false;
-  }
-  const sess = JSON.parse(localStorage.getItem("mangaEditorSession") || "null");
-  if (!sess || Date.now() > sess.expire) {
-    localStorage.removeItem("mangaEditorSession");
-    localStorage.removeItem('isLoggedIn');
-    alert("زمان ویرایش شما به پایان رسید. لطفاً دوباره از داشبورد شروع کنید.");
-    window.location.href = "dashboard.html";
-    return false;
-  }
-  // نمایش تایمر (اختیاری)
-  startSessionTimer(sess.expire);
-  return true;
-    }
+let endTime = localStorage.getItem('manga_endTime');
+if (!endTime) {
+    endTime = Date.now() + (180 * 60 * 1000); 
+    localStorage.setItem('manga_endTime', endTime);
+}
+let timeLeft = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+const LOGIN_PASS = 'Qwjavid77'; 
+
+function preloadFonts() {
+    const fonts = [
+        { name: 'font', url: '1/font.ttf' },
+        { name: 'a.gam.azad', url: '1/a.gam.azad.ttf' },
+        { name: 'bfarnaz', url: '1/bfarnaz.ttf' },
+        { name: 'afsaneh', url: '1/afsaneh.ttf' },
+        { name: 'bmorvard', url: '1/bmorvard.ttf' },
+        { name: 'bhoma', url: '1/bhoma.ttf' }
+    ];
     
-    const LOGIN_PASS = 'Qwjavid77'; 
-    const GLOBAL_UPLOAD_LIMIT = 30; 
-
-    // ── متغیرهای جدید اضافه شده ──
-    const MAX_ORIGINAL_UPLOAD = 15;
-    const MAX_CLEAN_UPLOAD   = 15;
-    const SESSION_DURATION_MS = 6 * 60 * 60 * 1000;   // ۶ ساعت
-    const SESSION_KEY = "mangaEditorSession";
-
-    // چک کردن جلسه و زمان
-    function checkSessionValid() {
-        const sess = localStorage.getItem(SESSION_KEY);
-        if (!sess) {
-            window.location.href = "dashboard.html";
-            return false;
-        }
-        try {
-            const data = JSON.parse(sess);
-            if (Date.now() > data.expire) {
-                localStorage.removeItem(SESSION_KEY);
-                localStorage.removeItem('isLoggedIn');
-                alert("زمان ویرایش شما به پایان رسید. لطفاً دوباره از داشبورد شروع کنید.");
-                window.location.href = "dashboard.html";
-                return false;
-            }
-            // نمایش تایمر (اختیاری – می‌تونی حذف کنی)
-            startSessionTimer(data.expire);
-            return true;
-        } catch (e) {
-            window.location.href = "dashboard.html";
-            return false;
-        }
-    }
-
-    function startSessionTimer(expireTime) {
-        const timerEl = document.getElementById('timerDisplay');
-        if (!timerEl) return;
-
-        function update() {
-            const remain = expireTime - Date.now();
-            if (remain <= 0) {
-                timerEl.textContent = "منقضی شد";
-                clearInterval(interval);
-                setTimeout(() => location.href = "dashboard.html", 1500);
-                return;
-            }
-            const h = Math.floor(remain / 3600000).toString().padStart(2,'0');
-            const m = Math.floor((remain % 3600000)/60000).toString().padStart(2,'0');
-            const s = Math.floor((remain % 60000)/1000).toString().padStart(2,'0');
-            timerEl.textContent = `\( {h}: \){m}:${s}`;
-        }
-        update();
-        const interval = setInterval(update, 1000);
-    }
-
-    // --- سیستم جدید لود فونت (Force Load) ---
-    // این تابع سعی می‌کند فونت‌ها را در پس‌زمینه لود کند
-    function preloadFonts() {
-        const fonts = [
-            { name: 'font', url: '1/font.ttf' },
-            { name: 'a.gam.azad', url: '1/a.gam.azad.ttf' },
-            { name: 'bfarnaz', url: '1/bfarnaz.ttf' },
-            { name: 'afsaneh', url: '1/afsaneh.ttf' },
-            { name: 'bmorvard', url: '1/bmorvard.ttf' },
-            { name: 'bhoma', url: '1/bhoma.ttf' }
-        ];
-        
-        fonts.forEach(f => {
-            const fontFace = new FontFace(f.name, `url(${f.url})`);
-            fontFace.load().then((loadedFont) => {
-                document.fonts.add(loadedFont);
-                console.log(`Font ${f.name} loaded successfully.`);
-            }).catch(err => {
-                console.warn(`Failed to load font ${f.name}. Check if file exists in '1/' folder.`, err);
-            });
+    fonts.forEach(f => {
+        const fontFace = new FontFace(f.name, `url(${f.url})`);
+        fontFace.load().then((loadedFont) => {
+            document.fonts.add(loadedFont);
+            console.log(`Font ${f.name} loaded successfully.`);
+        }).catch(err => {
+            console.warn(`Failed to load font ${f.name}.`, err);
         });
-    }
+    });
+}
 
-    function checkLoginState() {
-        if(localStorage.getItem('isLoggedIn') === 'true') {
-            document.getElementById('loginOverlay').style.display = 'none';
-            // مخفی کردن المان‌های داشبورد مانند وقتی لاگین شد
-            document.getElementById('big-enter-editor').style.display = 'none';
-            document.getElementById('token-info').style.display = 'none';
-            document.querySelector('.limit-text').style.display = 'none';
+function checkLoginState() {
+    if(localStorage.getItem('isLoggedIn') === 'true') {
+        document.getElementById('loginOverlay').style.display = 'none';
+    }
+}
+
+function checkPass() {
+    const input = document.getElementById('passInput');
+    if(input.value === LOGIN_PASS) {
+        localStorage.setItem('isLoggedIn', 'true'); 
+        document.getElementById('loginOverlay').style.opacity = '0';
+        setTimeout(() => { document.getElementById('loginOverlay').style.display = 'none'; }, 500);
+    } else {
+        input.classList.add('error');
+        setTimeout(() => { input.classList.remove('error'); }, 500);
+    }
+}
+
+function fullReset() {
+    if(confirm("آیا مطمئن هستید؟ همه‌ی صفحات و وضعیت ورود پاک خواهد شد.")) {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('manga_endTime');
+        localStorage.removeItem('mainCount');
+        localStorage.removeItem('cleanCount');
+        location.reload();
+    }
+}
+
+function toggleTopUI() {
+    const topUI = document.getElementById('topUI');
+    const btn = document.getElementById('uiToggleBtn');
+    const icon = btn.querySelector('.material-icons');
+    
+    topUI.classList.toggle('collapsed');
+    document.body.classList.toggle('ui-collapsed');
+    
+    if (topUI.classList.contains('collapsed')) {
+        icon.innerText = 'expand_more';
+    } else {
+        icon.innerText = 'expand_less';
+    }
+}
+
+let pages = [];
+let currentPageIdx = 0;
+let markersData = [];
+let fabricTexts = [];
+let undoStack = [];
+const MAX_UNDO = 10;
+
+const originalImg = document.getElementById('originalImage');
+const cleanImg = document.getElementById('cleanImage');
+const floodCanvas = document.getElementById('floodCanvas');
+const fCtx = floodCanvas.getContext('2d');
+const textInput = document.getElementById('textInput');
+const menu = document.getElementById('style-menu');
+const canvasWrapper = document.getElementById('canvasWrapper');
+
+const canvas = new fabric.Canvas('c', {
+    selection: false, centeredRotation: true, renderOnAddRemove: true
+});
+
+fabric.Object.prototype.objectCaching = false;
+
+fabric.Object.prototype.set({
+    transparentCorners: false, cornerStyle: 'circle', cornerColor: '#007bff', 
+    cornerStrokeColor: '#fff', cornerSize: 16, padding: 15,
+    originX: 'center', originY: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
+});
+
+canvas.on('mouse:wheel', function(opt) {
+    if (opt.e.ctrlKey) { 
+        let delta = opt.e.deltaY;
+        let zoom = canvas.getZoom();
+        zoom *= 0.999 ** delta;
+        if (zoom > 120) zoom = 120;
+        if (zoom < 0.01) zoom = 0.01;
+        canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+    }
+});
+
+// --- تابع هوشمند آپلود (جایگزین شده) ---
+function processUpload(e, isClean) {
+    if (isClean && cleanUploads >= 15) return alert("سقف ۱۵ عکس کلین تمام شد!");
+    if (!isClean && mainUploads >= 15) return alert("سقف ۱۵ عکس اصلی تمام شد!");
+
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    // پردازش مالتی پل فایل‌ها
+    Array.from(files).forEach(file => {
+        // برای جلوگیری از رد شدن از سقف در حلقه
+        if (isClean && cleanUploads >= 15) return;
+        if (!isClean && mainUploads >= 15) return;
+
+        const url = URL.createObjectURL(file);
+        if (!pages[currentPageIdx]) {
+            pages[currentPageIdx] = {
+                originalSrc: "", cleanSrc: "", markersData: [], fabricJSON: '{}'
+            };
         }
-    }
-
-    function checkPass() {
-        const input = document.getElementById('passInput');
-        if(input.value === LOGIN_PASS) {
-            localStorage.setItem('isLoggedIn', 'true'); 
-            document.getElementById('loginOverlay').style.opacity = '0';
-            setTimeout(() => { document.getElementById('loginOverlay').style.display = 'none'; }, 500);
+        if (isClean) {
+            pages[currentPageIdx].cleanSrc = url;
+            cleanUploads++;
+            localStorage.setItem('cleanCount', cleanUploads);
         } else {
-            input.classList.add('error');
-            setTimeout(() => { input.classList.remove('error'); }, 500);
-        }
-    }
-
-    function fullReset() {
-        if(confirm("آیا مطمئن هستید؟ همه‌ی صفحات و وضعیت ورود پاک خواهد شد.")) {
-            localStorage.removeItem('isLoggedIn');
-            location.reload();
-        }
-    }
-
-    // تابع جمع و باز کردن منوی بالا
-    function toggleTopUI() {
-        const topUI = document.getElementById('topUI');
-        const btn = document.getElementById('uiToggleBtn');
-        const icon = btn.querySelector('.material-icons');
-        
-        topUI.classList.toggle('collapsed');
-        document.body.classList.toggle('ui-collapsed');
-        
-        if (topUI.classList.contains('collapsed')) {
-            icon.innerText = 'expand_more';
-        } else {
-            icon.innerText = 'expand_less';
-        }
-    }
-
-    let pages = [];
-    let currentPageIdx = 0;
-    let markersData = [];
-    let fabricTexts = [];
-    let undoStack = [];
-    const MAX_UNDO = 10;
-
-    const originalImg = document.getElementById('originalImage');
-    const cleanImg = document.getElementById('cleanImage');
-    const floodCanvas = document.getElementById('floodCanvas');
-    const fCtx = floodCanvas.getContext('2d');
-    const textInput = document.getElementById('textInput');
-    const menu = document.getElementById('style-menu');
-    const canvasWrapper = document.getElementById('canvasWrapper');
-
-    const canvas = new fabric.Canvas('c', {
-        selection: false, centeredRotation: true, renderOnAddRemove: true
-    });
-
-    fabric.Object.prototype.objectCaching = false;
-
-    fabric.Object.prototype.set({
-        transparentCorners: false, cornerStyle: 'circle', cornerColor: '#007bff', 
-        cornerStrokeColor: '#fff', cornerSize: 16, padding: 15,
-        originX: 'center', originY: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
-    });
-
-    canvas.on('mouse:wheel', function(opt) {
-        if (opt.e.ctrlKey) { 
-            let delta = opt.e.deltaY;
-            let zoom = canvas.getZoom();
-            zoom *= 0.999 ** delta;
-            if (zoom > 120) zoom = 120;
-            if (zoom < 0.01) zoom = 0.01;
-            canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-            opt.e.preventDefault();
-            opt.e.stopPropagation();
+            pages[currentPageIdx].originalSrc = url;
+            mainUploads++;
+            localStorage.setItem('mainCount', mainUploads);
         }
     });
 
-    function handleFiles(files, type) {
-        let currentCount = pages.filter(p => type === 'original' ? p.originalSrc : p.cleanSrc).length;
-        const maxAllowed = type === 'original' ? MAX_ORIGINAL_UPLOAD : MAX_CLEAN_UPLOAD;
-
-        if (currentCount + files.length > maxAllowed) {
-            alert(`حداکثر \( {maxAllowed} فایل \){type === 'original' ? 'اصلی' : 'کلین'} مجاز است.`);
-            return;
+    // به‌روزرسانی تصویر فعلی
+    if (pages[currentPageIdx]) {
+        originalImg.src = pages[currentPageIdx].originalSrc || "";
+        cleanImg.src   = pages[currentPageIdx].cleanSrc   || "";
+    }
+    updateThumbs();
+    autoSave();
+    
+    // باز کردن فایل در بوم اگر فقط یکی انتخاب شده بود (اختیاری، برای سازگاری با کد قبلی)
+    // کد قبلی شما عکس را مستقیماً به بوم اضافه می‌کرد، اما در سیستم پیج‌بندی (Pagination)
+    // بهتر است عکس به عنوان "پس‌زمینه" صفحه ست شود. کد بالا این کار را می‌کند.
+    // اما برای اطمینان از لود شدن روی بوم:
+    if(pages[currentPageIdx].cleanSrc) {
+        const imgObj = new Image();
+        imgObj.src = pages[currentPageIdx].cleanSrc;
+        imgObj.onload = function() {
+            canvas.setWidth(imgObj.naturalWidth);
+            canvas.setHeight(imgObj.naturalHeight);
+            canvas.getElement().style.width = imgObj.clientWidth + 'px';
+            canvas.getElement().style.height = imgObj.clientHeight + 'px';
         }
+    }
+}
 
-        Array.from(files).forEach((file, i) => {
-            const url = URL.createObjectURL(file);
-            if (!pages[i]) {
-                pages[i] = { 
-                    originalSrc: "", cleanSrc: "", 
-                    markersData: [], 
-                    fabricJSON: JSON.stringify(canvas.toJSON()) 
-                };
-            }
-            if (type === 'original') pages[i].originalSrc = url;
-            else pages[i].cleanSrc = url;
-        });
+// اتصال لیسنرهای جدید
+document.getElementById('uploadOriginal').addEventListener('change', (e) => {
+    processUpload(e, false);
+    e.target.value = '';
+});
+
+document.getElementById('uploadClean').addEventListener('change', (e) => {
+    processUpload(e, true);
+    e.target.value = '';
+});
+// ----------------------------------------
+
+function saveCurrentPageState() {
+    if (pages[currentPageIdx]) {
+        pages[currentPageIdx].markersData = [...markersData];
+        pages[currentPageIdx].fabricJSON = JSON.stringify(canvas.toJSON());
+    }
+}
+
+function switchPage(idx) {
+    saveCurrentPageState();
+    currentPageIdx = idx;
+    const p = pages[idx];
+    originalImg.src = p.originalSrc || "";
+    cleanImg.src = p.cleanSrc || "";
+    
+    markersData = p.markersData || [];
+    undoStack = [];
+    
+    document.getElementById('cleanWrapper').scrollTop = 0;
+    document.getElementById('originalWrapper').scrollTop = 0;
+    document.getElementById('cleanWrapper').scrollLeft = 0;
+    document.getElementById('originalWrapper').scrollLeft = 0;
+
+    canvas.loadFromJSON(p.fabricJSON || '{"objects":[],"background":""}', () => {
+        canvas.renderAll();
+        fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
         updateThumbs();
-        if (pages.length > 0 && !cleanImg.src) switchPage(0);
-    }
+        drawUI();
+    });
+}
 
-    document.getElementById('uploadOriginal').addEventListener('change', e => handleFiles(e.target.files, 'original'));
-    document.getElementById('uploadClean').addEventListener('change', e => handleFiles(e.target.files, 'clean'));
+function updateThumbs() {
+    const list = document.getElementById('pagesList');
+    list.innerHTML = "";
+    pages.forEach((p, i) => {
+        const div = document.createElement('div');
+        div.className = `page-thumb ${i === currentPageIdx ? 'active' : ''}`;
+        div.innerText = `صفحه ${i + 1}`;
+        div.onclick = () => switchPage(i);
+        list.appendChild(div);
+    });
+}
 
-    function saveCurrentPageState() {
-        if (pages[currentPageIdx]) {
-            pages[currentPageIdx].markersData = [...markersData];
-            pages[currentPageIdx].fabricJSON = JSON.stringify(canvas.toJSON());
-        }
-    }
+function saveState() {
+    undoStack.push(JSON.stringify(canvas.toJSON()));
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
 
-    function switchPage(idx) {
-        saveCurrentPageState();
-        currentPageIdx = idx;
-        const p = pages[idx];
-        originalImg.src = p.originalSrc || "";
-        cleanImg.src = p.cleanSrc || "";
-        
-        markersData = p.markersData || [];
-        undoStack = [];
-        
-        document.getElementById('cleanWrapper').scrollTop = 0;
-        document.getElementById('originalWrapper').scrollTop = 0;
-        document.getElementById('cleanWrapper').scrollLeft = 0;
-        document.getElementById('originalWrapper').scrollLeft = 0;
-
-        canvas.loadFromJSON(p.fabricJSON || '{"objects":[],"background":""}', () => {
+document.getElementById('undoBtn').addEventListener('click', () => {
+    if (undoStack.length > 0) {
+        const state = undoStack.pop();
+        canvas.loadFromJSON(state, () => {
             canvas.renderAll();
             fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
-            updateThumbs();
-            drawUI();
         });
     }
+});
 
-    function updateThumbs() {
-        const list = document.getElementById('pagesList');
-        list.innerHTML = "";
-        pages.forEach((p, i) => {
-            const div = document.createElement('div');
-            div.className = `page-thumb ${i === currentPageIdx ? 'active' : ''}`;
-            div.innerText = `صفحه ${i + 1}`;
-            div.onclick = () => switchPage(i);
-            list.appendChild(div);
-        });
+function renderIcon(iconName, extraScale = 1) {
+    return function(ctx, left, top, styleOverride, fabricObject) {
+        const size = 26 * extraScale;
+        ctx.save(); 
+        ctx.translate(left, top);
+        ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+        ctx.beginPath(); 
+        ctx.arc(0, 0, size/2, 0, Math.PI * 2, false);
+        ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#007bff"; ctx.stroke();
+        ctx.fillStyle = "#000"; ctx.font = (16 * extraScale) + 'px "Material Icons"';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(iconName, 0, 0); 
+        ctx.restore();
     }
+}
 
-    function saveState() {
-        undoStack.push(JSON.stringify(canvas.toJSON()));
-        if (undoStack.length > MAX_UNDO) undoStack.shift();
-    }
+const ctl = fabric.Textbox.prototype.controls;
 
-    document.getElementById('undoBtn').addEventListener('click', () => {
-        if (undoStack.length > 0) {
-            const state = undoStack.pop();
-            canvas.loadFromJSON(state, () => {
-                canvas.renderAll();
-                fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
-            });
+ctl.delete = new fabric.Control({ 
+    x: -0.5, y: -0.5, offsetX: -20, offsetY: -20, 
+    mouseUpHandler: (e, t) => {
+        saveState();
+        const idx = fabricTexts.indexOf(t.target);
+        if(idx > -1) {
+            fabricTexts.splice(idx, 1);
+            canvas.remove(t.target);
+            shiftTextsAndMarkers();
+        } else {
+            canvas.remove(t.target);
         }
-    });
+    }, 
+    render: renderIcon('close') 
+});
 
-    function renderIcon(iconName, extraScale = 1) {
-        return function(ctx, left, top, styleOverride, fabricObject) {
-            const size = 26 * extraScale; 
-            ctx.save(); 
-            ctx.translate(left, top);
-            ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-            ctx.beginPath(); 
-            ctx.arc(0, 0, size/2, 0, Math.PI * 2, false);
-            ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#007bff"; ctx.stroke();
-            ctx.fillStyle = "#000"; ctx.font = (16 * extraScale) + 'px "Material Icons"';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(iconName, 0, 0); 
-            ctx.restore();
-        }
-    }
+ctl.styleMenuTrigger = new fabric.Control({
+    x: 0, y: 0.5, offsetX: 0, offsetY: 25, 
+    cursorStyle: 'pointer',
+    mouseUpHandler: (e, t) => {
+        const isVisible = menu.style.display === 'flex';
+        menu.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) updateMenuPos();
+        return true;
+    },
+    render: renderIcon('palette') 
+});
 
-    const ctl = fabric.Textbox.prototype.controls;
-    
-    ctl.delete = new fabric.Control({ 
-        x: -0.5, y: -0.5, offsetX: -20, offsetY: -20, 
-        mouseUpHandler: (e, t) => {
-            saveState();
-            const idx = fabricTexts.indexOf(t.target);
-            if(idx > -1) {
-                fabricTexts.splice(idx, 1);
-                canvas.remove(t.target);
-                shiftTextsAndMarkers();
+ctl.sizeResizer = new fabric.Control({
+    x: 0.5, y: 0.5, offsetX: 20, offsetY: 20, 
+    cursorStyle: 'nwse-resize',
+    actionHandler: fabric.controlsUtils.scalingEqually, 
+    actionName: 'scale',
+    render: renderIcon('format_size', 1.3)
+});
+
+ctl.mr = new fabric.Control({
+    x: 0.5, y: 0, offsetX: 20, cursorStyle: 'ew-resize',
+    actionHandler: fabric.controlsUtils.changeWidth,
+    actionName: 'resizing',
+    render: renderIcon('compare_arrows', 1.1)
+});
+
+delete ctl.styleToggle;
+ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
+
+ctl.edit = new fabric.Control({
+    x: 0, y: -0.5, offsetX: 0, offsetY: -25, 
+    cursorStyle: 'pointer',
+    mouseUpHandler: (e, transform) => {
+        const target = transform.target;
+        target.set('editable', true);
+        target.enterEditing();
+        target.selectAll();
+        canvas.renderAll();
+        return true;
+    },
+    render: renderIcon('edit') 
+});
+
+canvas.on('text:editing:exited', (e) => {
+    if(e.target) e.target.set('editable', false);
+});
+
+textInput.addEventListener('input', () => {
+    const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
+    const globalOffset = getGlobalMarkerOffset(currentPageIdx);
+
+    fabricTexts.forEach((textObj, i) => {
+        const globalIndex = globalOffset + i;
+        if(lines[globalIndex] !== undefined) {
+            textObj.originalText = lines[globalIndex];
+            if(textObj.circleMode) {
+                textObj.set('text', applyMangaCircleLogic(lines[globalIndex], textObj.circleMode));
             } else {
-                canvas.remove(t.target);
+                textObj.set('text', lines[globalIndex]);
             }
-        }, 
-        render: renderIcon('close') 
-    });
-    
-    ctl.styleMenuTrigger = new fabric.Control({
-        x: 0, y: 0.5, offsetX: 0, offsetY: 25, 
-        cursorStyle: 'pointer',
-        mouseUpHandler: (e, t) => {
-            const isVisible = menu.style.display === 'flex';
-            menu.style.display = isVisible ? 'none' : 'flex';
-            if (!isVisible) updateMenuPos();
-            return true;
-        },
-        render: renderIcon('palette') 
-    });
-
-    ctl.sizeResizer = new fabric.Control({
-        x: 0.5, y: 0.5, offsetX: 20, offsetY: 20, 
-        cursorStyle: 'nwse-resize',
-        actionHandler: fabric.controlsUtils.scalingEqually, 
-        actionName: 'scale',
-        render: renderIcon('format_size', 1.3) 
-    });
-
-    ctl.mr = new fabric.Control({
-        x: 0.5, y: 0, 
-        offsetX: 20, 
-        cursorStyle: 'ew-resize',
-        actionHandler: fabric.controlsUtils.changeWidth,
-        actionName: 'resizing',
-        render: renderIcon('compare_arrows', 1.1) 
-    });
-
-    delete ctl.styleToggle;
-
-    ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
-
-    ctl.edit = new fabric.Control({
-        x: 0, y: -0.5, offsetX: 0, offsetY: -25, 
-        cursorStyle: 'pointer',
-        mouseUpHandler: (e, transform) => {
-            const target = transform.target;
-            target.set('editable', true);
-            target.enterEditing();
-            target.selectAll();
+            if(textObj.text.length < 10) textObj.set('width', 100);
             canvas.renderAll();
-            return true;
-        },
-        render: renderIcon('edit') 
-    });
-
-    canvas.on('text:editing:exited', (e) => {
-        if(e.target) {
-            e.target.set('editable', false);
         }
     });
+    textInput.style.height = 'auto';
+    textInput.style.height = textInput.scrollHeight + 'px';
+});
 
-    textInput.addEventListener('input', () => {
-        const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
-        
-        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
-
-        fabricTexts.forEach((textObj, i) => {
-            const globalIndex = globalOffset + i;
-
-            if(lines[globalIndex] !== undefined) {
-                textObj.originalText = lines[globalIndex];
-
-                if(textObj.circleMode) {
-                    textObj.set('text', applyMangaCircleLogic(lines[globalIndex], textObj.circleMode));
-                } else {
-                    textObj.set('text', lines[globalIndex]);
-                }
-                if(textObj.text.length < 10) textObj.set('width', 100);
-                canvas.renderAll();
-            }
-        });
-        textInput.style.height = 'auto';
-        textInput.style.height = textInput.scrollHeight + 'px';
-    });
-
-    function getGlobalMarkerOffset(pageIdx) {
-        let count = 0;
-        for(let i = 0; i < pageIdx; i++) {
-            if(pages[i] && pages[i].markersData) {
-                count += pages[i].markersData.length;
-            }
-        }
-        return count;
+function getGlobalMarkerOffset(pageIdx) {
+    let count = 0;
+    for(let i = 0; i < pageIdx; i++) {
+        if(pages[i] && pages[i].markersData) count += pages[i].markersData.length;
     }
+    return count;
+}
 
-    originalImg.onload = () => {
-        floodCanvas.width = originalImg.naturalWidth;
-        floodCanvas.height = originalImg.naturalHeight;
-    };
+originalImg.onload = () => {
+    floodCanvas.width = originalImg.naturalWidth;
+    floodCanvas.height = originalImg.naturalHeight;
+};
 
-    cleanImg.onload = () => {
-        canvas.setWidth(cleanImg.naturalWidth);
-        canvas.setHeight(cleanImg.naturalHeight);
-        canvas.getElement().style.width = cleanImg.clientWidth + 'px';
-        canvas.getElement().style.height = cleanImg.clientHeight + 'px';
-    };
+cleanImg.onload = () => {
+    canvas.setWidth(cleanImg.naturalWidth);
+    canvas.setHeight(cleanImg.naturalHeight);
+    canvas.getElement().style.width = cleanImg.clientWidth + 'px';
+    canvas.getElement().style.height = cleanImg.clientHeight + 'px';
+};
 
-    originalImg.addEventListener('click', e => {
-        if(!originalImg.naturalWidth) return;
-        saveState();
-        const rect = originalImg.getBoundingClientRect();
-        const scaleX = originalImg.naturalWidth / rect.width;
-        const scaleY = originalImg.naturalHeight / rect.height;
-        const x = Math.floor((e.clientX - rect.left) * scaleX);
-        const y = Math.floor((e.clientY - rect.top) * scaleY);
-        
-        const result = runFloodFill(x, y);
-        
-        const currentIdx = markersData.length;
-        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
-        const globalIndex = globalOffset + currentIdx;
-
-        const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
-        
-        if (lines.length <= globalIndex) {
-            textInput.value += (textInput.value ? "\n" : "");
-        }
-        
-        const updatedLines = textInput.value.split('\n').filter(line => line.trim() !== '');
-        const content = updatedLines[globalIndex] || "";
-        markersData.push(result);
-        
-        const textObj = new fabric.Textbox(content, {
-            left: result.x, top: result.y, fontFamily: 'font', fill: '#000000',
-            fontSize: 40, textAlign: 'center', 
-            width: content.length < 5 ? 80 : Math.max(result.w || 100, 150), 
-            minHeight: 50, direction: 'rtl', 
-            editable: false, 
-            splitByGrapheme: false 
-        });
-        
-        textObj.originalText = content; 
-
-        fabricTexts.push(textObj);
-        canvas.add(textObj);
-        drawUI();
+originalImg.addEventListener('click', e => {
+    if(!originalImg.naturalWidth) return;
+    saveState();
+    const rect = originalImg.getBoundingClientRect();
+    const scaleX = originalImg.naturalWidth / rect.width;
+    const scaleY = originalImg.naturalHeight / rect.height;
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+    
+    const result = runFloodFill(x, y);
+    const currentIdx = markersData.length;
+    const globalOffset = getGlobalMarkerOffset(currentPageIdx);
+    const globalIndex = globalOffset + currentIdx;
+    const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
+    
+    if (lines.length <= globalIndex) {
+        textInput.value += (textInput.value ? "\n" : "");
+    }
+    
+    const updatedLines = textInput.value.split('\n').filter(line => line.trim() !== '');
+    const content = updatedLines[globalIndex] || "";
+    markersData.push(result);
+    
+    const textObj = new fabric.Textbox(content, {
+        left: result.x, top: result.y, fontFamily: 'font', fill: '#000000',
+        fontSize: 40, textAlign: 'center', 
+        width: content.length < 5 ? 80 : Math.max(result.w || 100, 150), 
+        minHeight: 50, direction: 'rtl', editable: false, splitByGrapheme: false 
     });
+    
+    textObj.originalText = content; 
+    fabricTexts.push(textObj);
+    canvas.add(textObj);
+    drawUI();
+});
 
-    canvas.on('object:modified', (e) => {
-        saveState();
-        if (e.target && e.target.type === 'textbox') {
-            const idx = fabricTexts.indexOf(e.target);
-            if (idx > -1) {
-            }
+canvas.on('object:modified', (e) => {
+    saveState();
+    autoSave();
+});
+
+function runFloodFill(startX, startY) {
+    return { x: startX, y: startY, w: 300, h: 300, isCircle: true, points: [] };
+}
+
+function shiftTextsAndMarkers() {
+    fabricTexts.forEach((textObj, i) => {
+        if (markersData[i]) {
+            textObj.set({ left: markersData[i].x, top: markersData[i].y });
+            textObj.setCoords();
         }
     });
+    canvas.renderAll();
+    drawUI();
+}
 
-    function runFloodFill(startX, startY) {
-        return { 
-            x: startX, 
-            y: startY, 
-            w: 300, 
-            h: 300, 
-            isCircle: true, 
-            points: [] 
-        };
-    }
+function removeMarker(index) {
+    saveState();
+    markersData.splice(index, 1);
+    shiftTextsAndMarkers();
+}
 
-    function shiftTextsAndMarkers() {
-        fabricTexts.forEach((textObj, i) => {
-            if (markersData[i]) {
-                textObj.set({ left: markersData[i].x, top: markersData[i].y });
-                textObj.setCoords();
-            }
-        });
-        canvas.renderAll();
-        drawUI();
-    }
+function drawUI() {
+    document.getElementById('markerOverlay').innerHTML = '';
+    if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
+    const globalOffset = getGlobalMarkerOffset(currentPageIdx);
 
-    function removeMarker(index) {
-        saveState();
-        markersData.splice(index, 1);
-        shiftTextsAndMarkers();
-    }
-
-    function drawUI() {
-        document.getElementById('markerOverlay').innerHTML = '';
-        if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
-        
-        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
-
-        markersData.forEach((data, i) => {
-            fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
-            if(data.isCircle) {
-                fCtx.beginPath(); fCtx.arc(data.x, data.y, 150, 0, Math.PI*2); fCtx.fill();
-            } else {
-                data.points.forEach(p => fCtx.fillRect(p[0], p[1], 1, 1));
-            }
-            const dot = document.createElement('div');
-            dot.className = 'marker';
-            dot.style.left = (data.x / originalImg.naturalWidth * 100) + '%';
-            dot.style.top = (data.y / originalImg.naturalHeight * 100) + '%';
-            dot.innerText = globalOffset + i + 1;
-            dot.onclick = (e) => { e.stopPropagation(); removeMarker(i); };
-            document.getElementById('markerOverlay').appendChild(dot);
-        });
-    }
-
-    document.getElementById('toggleOriginal').addEventListener('click', () => {
-        document.getElementById('originalWrapper').classList.toggle('hidden-panel');
-    });
-    document.getElementById('toggleClean').addEventListener('click', () => {
-        document.getElementById('cleanWrapper').classList.toggle('hidden-panel');
-    });
-
-    canvasWrapper.addEventListener('mousedown', (e) => {
-        const target = canvas.findTarget(e);
-        if (target) document.getElementById('canvasHost').style.pointerEvents = "auto";
-    }, true);
-
-    canvas.on('mouse:down', (opt) => {
-        if (opt.target) {
-            document.getElementById('canvasHost').style.pointerEvents = "auto";
+    markersData.forEach((data, i) => {
+        fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
+        if(data.isCircle) {
+            fCtx.beginPath(); fCtx.arc(data.x, data.y, 150, 0, Math.PI*2); fCtx.fill();
         } else {
-            document.getElementById('canvasHost').style.pointerEvents = "none";
-            canvas.discardActiveObject().renderAll();
-            menu.style.display = 'none';
+            data.points.forEach(p => fCtx.fillRect(p[0], p[1], 1, 1));
         }
+        const dot = document.createElement('div');
+        dot.className = 'marker';
+        dot.style.left = (data.x / originalImg.naturalWidth * 100) + '%';
+        dot.style.top = (data.y / originalImg.naturalHeight * 100) + '%';
+        dot.innerText = globalOffset + i + 1;
+        dot.onclick = (e) => { e.stopPropagation(); removeMarker(i); };
+        document.getElementById('markerOverlay').appendChild(dot);
     });
+}
 
-    canvas.on('object:moving', updateMenuPos);
-    canvas.on('object:scaling', updateMenuPos);
-    canvas.on('selection:cleared', () => menu.style.display = 'none');
-    
-    function applyFont(fontName, fileName) { 
-        saveState(); 
-        const obj = canvas.getActiveObject(); 
-        if(!obj || obj.type !== 'textbox') return;
+document.getElementById('toggleOriginal').addEventListener('click', () => {
+    document.getElementById('originalWrapper').classList.toggle('hidden-panel');
+});
+document.getElementById('toggleClean').addEventListener('click', () => {
+    document.getElementById('cleanWrapper').classList.toggle('hidden-panel');
+});
 
-        if(!fileName) {
-            obj.set('fontFamily', fontName);
-            obj.set('dirty', true);
-            canvas.requestRenderAll();
-            return;
-        }
+canvasWrapper.addEventListener('mousedown', (e) => {
+    const target = canvas.findTarget(e);
+    if (target) document.getElementById('canvasHost').style.pointerEvents = "auto";
+}, true);
 
-        const fontPath = `1/${fileName}`;
-        
-        const fontFace = new FontFace(fontName, `url(${fontPath})`);
-        
-        fontFace.load().then(loadedFont => {
-            document.fonts.add(loadedFont);
-            obj.set('fontFamily', fontName);
-            obj.set('dirty', true);
-            canvas.requestRenderAll();
-            setTimeout(() => canvas.requestRenderAll(), 50);
-        }).catch(error => {
-            console.error('Font loading failed:', error);
-            alert('خطا در لود فونت. بررسی کنید فایل ' + fileName + ' در پوشه 1 موجود باشد.');
-        });
-    }
-    
-    canvas.on('selection:created', (e) => { menu.style.display = 'none'; });
-    canvas.on('selection:updated', (e) => { menu.style.display = 'none'; });
-
-    function updateMenuPos() {
-        const obj = canvas.getActiveObject(); 
-        if (!obj || menu.style.display !== 'flex') return;
-        
-        const rect = canvas.getElement().getBoundingClientRect();
-        const objCoords = obj.getBoundingRect();
-        const scaleX = rect.width / canvas.width;
-        const scaleY = rect.height / canvas.height;
-        
-        const menuWidth = 308; 
-        const leftPos = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuWidth / 2);
-        const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 40; 
-        
-        menu.style.left = leftPos + 'px';
-        menu.style.top = topPos + 'px';
-        
-        if(parseInt(menu.style.left) + menuWidth > window.innerWidth) {
-            menu.style.left = (window.innerWidth - menuWidth - 10) + 'px';
-        }
-        if(parseInt(menu.style.left) < 0) {
-            menu.style.left = '10px';
-        }
-    }
-
-    function changeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fill', c); canvas.renderAll(); } }
-    function changeStrokeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('stroke', c); canvas.renderAll(); } }
-    function changeStrokeWidth(w) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('strokeWidth', parseFloat(w)); canvas.renderAll(); } }
-
-    function addNewFont(event) {
-        const file = event.target.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const fontName = 'custom_' + Date.now();
-            const newFont = new FontFace(fontName, `url(${e.target.result})`);
-            newFont.load().then(loaded => {
-                document.fonts.add(loaded);
-                const item = document.createElement('div');
-                item.className = 'style-item';
-                item.innerText = file.name.substring(0,8);
-                item.onclick = () => applyFont(fontName);
-                document.getElementById('custom-fonts-list').appendChild(item);
-            });
-        };
-        reader.readAsDataURL(file);
-    }
-
-    document.getElementById('downloadBtn').addEventListener('click', async () => {
-        saveCurrentPageState();
-        for (let i = 0; i < pages.length; i++) {
-            const p = pages[i];
-            if (!p.cleanSrc) continue;
-            await new Promise(resolve => {
-                const offImg = new Image();
-                offImg.onload = () => {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = offImg.naturalWidth;
-                    tempCanvas.height = offImg.naturalHeight;
-                    const ctx = tempCanvas.getContext('2d');
-                    ctx.drawImage(offImg, 0, 0);
-                    const tempFabric = new fabric.StaticCanvas(null, { width: tempCanvas.width, height: tempCanvas.height });
-                    tempFabric.loadFromJSON(p.fabricJSON, () => {
-                        const textImg = new Image();
-                        textImg.onload = () => {
-                            ctx.drawImage(textImg, 0, 0);
-                            const link = document.createElement('a');
-                            link.download = `page_${i+1}.png`;
-                            link.href = tempCanvas.toDataURL('image/png');
-                            link.click();
-                            resolve();
-                        };
-                        textImg.src = tempFabric.toDataURL({ multiplier: 1 });
-                    });
-                };
-                offImg.src = p.cleanSrc;
-            });
-        }
-    });
-
-    function addNewFabricText() {
-        saveState();
-        const t = new fabric.Textbox('متن جدید', {
-            left: canvas.width/2, top: canvas.height/2, fontFamily: 'Tahoma', fill: '#000', 
-            fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl',
-            editable: false
-        });
-        t.originalText = 'متن جدید'; 
-        canvas.add(t).setActiveObject(t);
+canvas.on('mouse:down', (opt) => {
+    if (opt.target) {
         document.getElementById('canvasHost').style.pointerEvents = "auto";
+    } else {
+        document.getElementById('canvasHost').style.pointerEvents = "none";
+        canvas.discardActiveObject().renderAll();
+        menu.style.display = 'none';
     }
+});
 
-    let isFocusMode = false;
+canvas.on('object:moving', updateMenuPos);
+canvas.on('object:scaling', updateMenuPos);
+canvas.on('selection:cleared', () => menu.style.display = 'none');
 
-    document.getElementById('focusModeBtn').addEventListener('click', () => {
-        isFocusMode = !isFocusMode;
-        document.body.classList.toggle('focus-active');
-        const originalWrapper = document.getElementById('originalWrapper');
-        const focusBtn = document.getElementById('focusModeBtn');
-        if (isFocusMode) {
-            focusBtn.innerText = "خروج از تمرکز";
-            focusBtn.style.background = "#007bff";
-            originalWrapper.style.display = 'none'; 
-            if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height); 
-        } else {
-            focusBtn.innerText = "حالت تمرکز (سرعت بالا)";
-            focusBtn.style.background = "#000";
-            originalWrapper.style.display = 'block';
-            drawUI(); 
-            canvas.setZoom(1);
-            canvas.absolutePan({ x: 0, y: 0 });
-        }
+function applyFont(fontName, fileName) { 
+    saveState(); 
+    const obj = canvas.getActiveObject(); 
+    if(!obj || obj.type !== 'textbox') return;
+
+    if(!fileName) {
+        obj.set('fontFamily', fontName);
+        obj.set('dirty', true);
+        canvas.requestRenderAll();
+        return;
+    }
+    const fontPath = `1/${fileName}`;
+    const fontFace = new FontFace(fontName, `url(${fontPath})`);
+    
+    fontFace.load().then(loadedFont => {
+        document.fonts.add(loadedFont);
+        obj.set('fontFamily', fontName);
+        obj.set('dirty', true);
+        canvas.requestRenderAll();
+        setTimeout(() => canvas.requestRenderAll(), 50);
+    }).catch(error => {
+        console.error('Font loading failed:', error);
+        alert('خطا در لود فونت. بررسی کنید فایل ' + fileName + ' در پوشه 1 موجود باشد.');
     });
+}
 
-    const originalDrawUI = drawUI;
-    drawUI = function() { if (!isFocusMode) originalDrawUI(); };
+canvas.on('selection:created', (e) => { menu.style.display = 'none'; });
+canvas.on('selection:updated', (e) => { menu.style.display = 'none'; });
 
-    let currentRangeStart = 2;
-    const lineSelector = document.getElementById('line-selector-ui');
-    const circleContainer = document.getElementById('circle-container');
-
-    function updateLineCircles() {
-        circleContainer.innerHTML = '';
-        const obj = canvas.getActiveObject();
-        for(let i = currentRangeStart; i < currentRangeStart + 4; i++) {
-            const circle = document.createElement('div');
-            circle.className = 'line-circle' + (obj && obj.circleMode === i ? ' active' : '');
-            circle.innerText = i;
-            circle.onclick = () => setLineMode(i);
-            circleContainer.appendChild(circle);
-        }
+function updateMenuPos() {
+    const obj = canvas.getActiveObject(); 
+    if (!obj || menu.style.display !== 'flex') return;
+    
+    const rect = canvas.getElement().getBoundingClientRect();
+    const objCoords = obj.getBoundingRect();
+    const scaleX = rect.width / canvas.width;
+    const scaleY = rect.height / canvas.height;
+    
+    const menuWidth = 308;
+    const leftPos = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuWidth / 2);
+    const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 40;
+    
+    menu.style.left = leftPos + 'px';
+    menu.style.top = topPos + 'px';
+    
+    if(parseInt(menu.style.left) + menuWidth > window.innerWidth) {
+        menu.style.left = (window.innerWidth - menuWidth - 10) + 'px';
     }
-
-    function toggleLineRange() {
-        currentRangeStart = currentRangeStart === 2 ? 6 : 2;
-        updateLineCircles();
+    if(parseInt(menu.style.left) < 0) {
+        menu.style.left = '10px';
     }
+}
 
-    function setLineMode(num) {
-        const obj = canvas.getActiveObject();
-        if(!obj || obj.type !== 'textbox') return;
-        saveState();
-        
-        let baseText = obj.originalText || obj.text.replace(/ـ/g, '').replace(/\n/g, ' ');
+function changeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fill', c); canvas.renderAll(); } }
+function changeStrokeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('stroke', c); canvas.renderAll(); } }
+function changeStrokeWidth(w) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('strokeWidth', parseFloat(w)); canvas.renderAll(); } }
 
-        if (obj.circleMode === num) {
-            obj.circleMode = null;
-            obj.set('text', baseText);
-        } else {
-            obj.circleMode = num;
-            obj.set('text', applyMangaCircleLogic(baseText, num));
-        }
-        
-        canvas.renderAll();
-        updateLineCircles();
-    }
-
-    canvas.on('selection:created', showLineUI);
-    canvas.on('selection:updated', showLineUI);
-    canvas.on('selection:cleared', () => lineSelector.style.display = 'none');
-    canvas.on('object:moving', updateLineUIPos);
-    canvas.on('object:scaling', updateLineUIPos);
-
-    function showLineUI() {
-        const obj = canvas.getActiveObject();
-        if(obj && obj.type === 'textbox') {
-            lineSelector.style.display = 'flex';
-            updateLineCircles();
-            updateLineUIPos();
-        } else {
-            lineSelector.style.display = 'none';
-        }
-    }
-
-    function updateLineUIPos() {
-        const obj = canvas.getActiveObject();
-        if(!obj || lineSelector.style.display === 'none') return;
-        const rect = canvas.getElement().getBoundingClientRect();
-        const objCoords = obj.getBoundingRect();
-        const scaleX = rect.width / canvas.width;
-        const scaleY = rect.height / canvas.height;
-        
-        lineSelector.style.left = (rect.left + (objCoords.left + objCoords.width/2) * scaleX - 80) + 'px';
-        lineSelector.style.top = (rect.top + objCoords.top * scaleY - 50) + 'px';
-    }
-
-    function applyMangaCircleLogic(rawText, lineCount) {
-        const basePatterns = {
-            2: [1, 4], 3: [3, 6, 3], 4: [3, 6, 6, 3], 5: [3, 6, 8, 6, 3],
-            6: [3, 6, 8, 8, 6, 3], 7: [3, 6, 8, 10, 8, 6, 3], 8: [3, 6, 8, 10, 10, 8, 6, 3],
-            9: [3, 6, 8, 10, 12, 10, 8, 6, 3], 10: [3, 6, 8, 10, 12, 12, 10, 8, 6, 3]
-        };
-        const cannotConnectLeft = "ادذرزژوآء"; 
-        const punctuation = " .،!؟:؛-()\"";
-        
-        let words = rawText.replace(/ـ/g, '').split(/\s+/);
-        let pattern = basePatterns[lineCount] || [5];
-        let totalChars = words.join("").length;
-        let scaleFactor = Math.max(1.1, (totalChars + words.length) / pattern.reduce((a,b)=>a+b, 0));
-        let targetLengths = pattern.map(w => Math.round(w * scaleFactor));
-
-        let linesWords = Array.from({ length: lineCount }, () => []);
-        let currentLine = 0;
-
-        words.forEach(word => {
-            let currentLineText = linesWords[currentLine].join(" ");
-            if (currentLine < lineCount - 1) {
-                let currentDist = Math.abs(targetLengths[currentLine] - currentLineText.length);
-                let nextDist = Math.abs(targetLengths[currentLine] - (currentLineText + " " + word).length);
-                if (nextDist > currentDist && currentLineText.length > 0) currentLine++;
-            }
-            linesWords[currentLine].push(word);
+function addNewFont(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const fontName = 'custom_' + Date.now();
+        const newFont = new FontFace(fontName, `url(${e.target.result})`);
+        newFont.load().then(loaded => {
+            document.fonts.add(loaded);
+            const item = document.createElement('div');
+            item.className = 'style-item';
+            item.innerText = file.name.substring(0,8);
+            item.onclick = () => applyFont(fontName);
+            document.getElementById('custom-fonts-list').appendChild(item);
         });
+    };
+    reader.readAsDataURL(file);
+}
 
-        return linesWords.map((lineArr, idx) => {
-            let lineText = lineArr.join(" ");
-            let targetLen = targetLengths[idx];
-            if (lineText.length >= targetLen) return lineText;
-            
-            let chars = lineText.split("");
-            let diff = targetLen - lineText.length;
-            let validSlots = [];
-            for (let i = 0; i < chars.length - 1; i++) {
-                if (!cannotConnectLeft.includes(chars[i]) && !punctuation.includes(chars[i]) && !punctuation.includes(chars[i+1])) {
-                    validSlots.push(i);
-                }
-            }
-            if (validSlots.length > 0) {
-                let counter = 0;
-                while (diff > 0) {
-                    chars[validSlots[counter % validSlots.length]] += "ـ";
-                    diff--; counter++;
-                }
-            }
-            return chars.join("");
-        }).join("\n");
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+    saveCurrentPageState();
+    for (let i = 0; i < pages.length; i++) {
+        const p = pages[i];
+        if (!p.cleanSrc) continue;
+        await new Promise(resolve => {
+            const offImg = new Image();
+            offImg.onload = () => {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = offImg.naturalWidth;
+                tempCanvas.height = offImg.naturalHeight;
+                const ctx = tempCanvas.getContext('2d');
+                ctx.drawImage(offImg, 0, 0);
+                const tempFabric = new fabric.StaticCanvas(null, { width: tempCanvas.width, height: tempCanvas.height });
+                tempFabric.loadFromJSON(p.fabricJSON, () => {
+                    const textImg = new Image();
+                    textImg.onload = () => {
+                        ctx.drawImage(textImg, 0, 0);
+                        const link = document.createElement('a');
+                        link.download = `page_${i+1}.png`;
+                        link.href = tempCanvas.toDataURL('image/png');
+                        link.click();
+                        resolve();
+                    };
+                    textImg.src = tempFabric.toDataURL({ multiplier: 1 });
+                });
+            };
+            offImg.src = p.cleanSrc;
+        });
     }
+});
 
-    // ── کد جدید برای مخفی کردن المان‌های داشبورد بعد از ورود ──
-    document.getElementById('big-enter-editor').addEventListener('click', function(){
-        this.style.display = 'none';
-        document.getElementById('token-info').style.display = 'none';
-        document.querySelector('.limit-text').style.display = 'none';
+function addNewFabricText() {
+    saveState();
+    const t = new fabric.Textbox('متن جدید', {
+        left: canvas.width/2, top: canvas.height/2, fontFamily: 'Tahoma', fill: '#000', 
+        fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl',
+        editable: false
+    });
+    t.originalText = 'متن جدید'; 
+    canvas.add(t).setActiveObject(t);
+    document.getElementById('canvasHost').style.pointerEvents = "auto";
+}
+
+let isFocusMode = false;
+document.getElementById('focusModeBtn').addEventListener('click', () => {
+    isFocusMode = !isFocusMode;
+    document.body.classList.toggle('focus-active');
+    const originalWrapper = document.getElementById('originalWrapper');
+    const focusBtn = document.getElementById('focusModeBtn');
+    if (isFocusMode) {
+        focusBtn.innerText = "خروج از تمرکز";
+        focusBtn.style.background = "#007bff";
+        originalWrapper.style.display = 'none'; 
+        if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height); 
+    } else {
+        focusBtn.innerText = "حالت تمرکز (سرعت بالا)";
+        focusBtn.style.background = "#000";
+        originalWrapper.style.display = 'block';
+        drawUI(); 
+        canvas.setZoom(1);
+        canvas.absolutePan({ x: 0, y: 0 });
+    }
+});
+
+const originalDrawUI = drawUI;
+drawUI = function() { if (!isFocusMode) originalDrawUI(); };
+
+let currentRangeStart = 2;
+const lineSelector = document.getElementById('line-selector-ui');
+const circleContainer = document.getElementById('circle-container');
+
+function updateLineCircles() {
+    circleContainer.innerHTML = '';
+    const obj = canvas.getActiveObject();
+    for(let i = currentRangeStart; i < currentRangeStart + 4; i++) {
+        const circle = document.createElement('div');
+        circle.className = 'line-circle' + (obj && obj.circleMode === i ? ' active' : '');
+        circle.innerText = i;
+        circle.onclick = () => setLineMode(i);
+        circleContainer.appendChild(circle);
+    }
+}
+
+function toggleLineRange() {
+    currentRangeStart = currentRangeStart === 2 ? 6 : 2;
+    updateLineCircles();
+}
+
+function setLineMode(num) {
+    const obj = canvas.getActiveObject();
+    if(!obj || obj.type !== 'textbox') return;
+    saveState();
+    let baseText = obj.originalText || obj.text.replace(/ـ/g, '').replace(/\n/g, ' ');
+
+    if (obj.circleMode === num) {
+        obj.circleMode = null;
+        obj.set('text', baseText);
+    } else {
+        obj.circleMode = num;
+        obj.set('text', applyMangaCircleLogic(baseText, num));
+    }
+    
+    canvas.renderAll();
+    updateLineCircles();
+}
+
+canvas.on('selection:created', showLineUI);
+canvas.on('selection:updated', showLineUI);
+canvas.on('selection:cleared', () => lineSelector.style.display = 'none');
+canvas.on('object:moving', updateLineUIPos);
+canvas.on('object:scaling', updateLineUIPos);
+
+function showLineUI() {
+    const obj = canvas.getActiveObject();
+    if(obj && obj.type === 'textbox') {
+        lineSelector.style.display = 'flex';
+        updateLineCircles();
+        updateLineUIPos();
+    } else {
+        lineSelector.style.display = 'none';
+    }
+}
+
+function updateLineUIPos() {
+    const obj = canvas.getActiveObject();
+    if(!obj || lineSelector.style.display === 'none') return;
+    const rect = canvas.getElement().getBoundingClientRect();
+    const objCoords = obj.getBoundingRect();
+    const scaleX = rect.width / canvas.width;
+    const scaleY = rect.height / canvas.height;
+    
+    lineSelector.style.left = (rect.left + (objCoords.left + objCoords.width/2) * scaleX - 80) + 'px';
+    lineSelector.style.top = (rect.top + objCoords.top * scaleY - 50) + 'px';
+}
+
+function applyMangaCircleLogic(rawText, lineCount) {
+    const basePatterns = {
+        2: [2, 5], 3: [3, 6, 3], 4: [3, 6, 6, 3], 5: [3, 6, 8, 6, 3],
+        6: [3, 6, 8, 8, 6, 3], 7: [3, 6, 8, 10, 8, 6, 3], 8: [3, 6, 8, 10, 10, 8, 6, 3],
+        9: [3, 6, 8, 10, 12, 10, 8, 6, 3], 10: [3, 6, 8, 10, 12, 12, 10, 8, 6, 3]
+    };
+    const cannotConnectLeft = "ادذرزژوآء"; 
+    const punctuation = " .،!؟:؛-()\"";
+    
+    let words = rawText.replace(/ـ/g, '').split(/\s+/);
+    let pattern = basePatterns[lineCount] || [5];
+    let totalChars = words.join("").length;
+    let scaleFactor = Math.max(1.1, (totalChars + words.length) / pattern.reduce((a,b)=>a+b, 0));
+    let targetLengths = pattern.map(w => Math.round(w * scaleFactor));
+
+    let linesWords = Array.from({ length: lineCount }, () => []);
+    let currentLine = 0;
+
+    words.forEach(word => {
+        let currentLineText = linesWords[currentLine].join(" ");
+        if (currentLine < lineCount - 1) {
+            let currentDist = Math.abs(targetLengths[currentLine] - currentLineText.length);
+            let nextDist = Math.abs(targetLengths[currentLine] - (currentLineText + " " + word).length);
+            if (nextDist > currentDist && currentLineText.length > 0) currentLine++;
+        }
+        linesWords[currentLine].push(word);
     });
 
+    return linesWords.map((lineArr, idx) => {
+        let lineText = lineArr.join(" ");
+        let targetLen = targetLengths[idx];
+        if (lineText.length >= targetLen) return lineText;
+        
+        let chars = lineText.split("");
+        let diff = targetLen - lineText.length;
+        let validSlots = [];
+        for (let i = 0; i < chars.length - 1; i++) {
+            if (!cannotConnectLeft.includes(chars[i]) && !punctuation.includes(chars[i]) && !punctuation.includes(chars[i+1])) {
+                validSlots.push(i);
+            }
+        }
+        if (validSlots.length > 0) {
+            let counter = 0;
+            while (diff > 0) {
+                chars[validSlots[counter % validSlots.length]] += "ـ";
+                diff--; counter++;
+            }
+        }
+        return chars.join("");
+    }).join("\n");
+}
+
+function autoSave() {
+    if (!canvas) return;
+    const json = JSON.stringify(canvas.toJSON());
+    localStorage.setItem('manga_autosave_' + username, json);
+}
+
+function exitToDashboard() {
+    if(confirm("آیا مطمئن هستید؟ تمام تغییرات این چپتر پاک خواهد شد.")) {
+        localStorage.removeItem('manga_endTime');
+        localStorage.removeItem('mainCount');
+        localStorage.removeItem('cleanCount');
+        localStorage.removeItem('manga_autosave_' + username);
+        window.location.href = 'dashboard.html';
+    }
+}
+
+function startSession() {
+    const savedData = localStorage.getItem('manga_autosave_' + username);
+    if (savedData && canvas) {
+        canvas.loadFromJSON(savedData, () => canvas.renderAll());
+    }
+
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        let h = Math.floor(timeLeft / 3600);
+        let m = Math.floor((timeLeft % 3600) / 60);
+        let s = timeLeft % 60;
+        
+        const display = document.getElementById('timerDisplay');
+        if(display) {
+            display.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert("زمان شما تمام شد!");
+            exitToDashboard();
+        }
+        
+        if (timeLeft % 30 === 0) autoSave();
+    }, 1000);
+}
+
+startSession();
 </script>
 </body>
 </html>
-
