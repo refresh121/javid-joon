@@ -27,18 +27,14 @@
       transition: all 0.25s;
     }
     .glow-button:hover { transform:scale(1.06); box-shadow:0 12px 40px rgba(0,170,255,0.4); }
-    .glow-button:disabled {
-      background:#555;
-      cursor:not-allowed;
-      box-shadow:none;
-    }
+    .glow-button:disabled { background:#555; cursor:not-allowed; box-shadow:none; }
     .border-glow {
       position:absolute; inset:-8px; border-radius:999px; pointer-events:none; z-index:1;
       background: conic-gradient(
         from 0deg at 50% 50%,
         #0af, #f0f, #0ff, #0f0, #ff0, #f80, #f00, #0af
       );
-      animation: rotate 3.5s linear infinite;
+      animation: rotate 10s steps(8) infinite; /* کندتر + مکث با steps */
       filter: blur(12px) brightness(1.3);
     }
     @keyframes rotate {
@@ -55,7 +51,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="checkAuth();">
 
 <h1>ویرایشگر مانگا - داشبورد</h1>
 
@@ -65,7 +61,7 @@
 
 <div class="glow-button-wrapper">
   <div class="border-glow"></div>
-  <button class="glow-button" id="enterEditorBtn">
+  <button class="glow-button" id="enterEditorBtn" disabled>
     ورود به ویرایشگر
   </button>
 </div>
@@ -80,8 +76,25 @@
 <button class="back-btn" onclick="history.back()">بازگشت</button>
 
 <script>
+  const AUTH_KEY = "mangaEditorAuth";
   const STORAGE_KEY = "mangaEditorSession";
   const SESSION_DURATION = 6 * 60 * 60 * 1000; // ۶ ساعت
+
+  function checkAuth() {
+    const auth = getAuth();
+    if (!auth || !auth.loggedIn) {
+      window.location.href = "login.html";
+      return;
+    }
+    updateTokenDisplay();
+  }
+
+  function getAuth() {
+    const data = localStorage.getItem(AUTH_KEY);
+    if (!data) return null;
+    try { return JSON.parse(data); }
+    catch { return null; }
+  }
 
   function getSession() {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -91,6 +104,12 @@
   }
 
   function createNewSession() {
+    const auth = getAuth();
+    if (auth.tokens <= 0) {
+      alert("توکن‌های شما تمام شده است.");
+      return null;
+    }
+
     const now = Date.now();
     const session = {
       start: now,
@@ -98,56 +117,70 @@
       usedToken: true
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+
+    // سوزاندن یک توکن
+    auth.tokens -= 1;
+    localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+
     return session;
   }
 
   function updateTokenDisplay() {
+    const auth = getAuth();
     const sess = getSession();
     const tokenEl = document.getElementById("tokenCount");
     const btn = document.getElementById("enterEditorBtn");
 
-    if (!sess) {
+    if (!auth) {
       tokenEl.textContent = "۰";
       tokenEl.style.color = "#e33";
-      btn.disabled = false;
-      btn.textContent = "شروع جلسه جدید";
+      btn.disabled = true;
       return;
     }
 
-    const remainMs = sess.expire - Date.now();
-    if (remainMs <= 0) {
-      localStorage.removeItem(STORAGE_KEY);
-      tokenEl.textContent = "۰ (منقضی شده)";
-      tokenEl.style.color = "#e33";
-      btn.disabled = false;
-      btn.textContent = "شروع جلسه جدید";
+    tokenEl.textContent = auth.tokens;
+    tokenEl.style.color = auth.tokens > 0 ? "#0f8" : "#e33";
+
+    if (auth.tokens <= 0) {
+      btn.disabled = true;
+      btn.textContent = "توکن تمام شده";
       return;
     }
 
-    const hours = Math.floor(remainMs / 3600000);
-    const mins  = Math.floor((remainMs % 3600000) / 60000);
-    tokenEl.textContent = `۱ (∼ \( {hours}س \){mins}د)`;
-    tokenEl.style.color = "#0f8";
-    btn.disabled = false;
-    btn.textContent = "ادامه ویرایش";
+    if (sess) {
+      const remainMs = sess.expire - Date.now();
+      if (remainMs <= 0) {
+        localStorage.removeItem(STORAGE_KEY);
+        btn.disabled = false;
+        btn.textContent = "شروع جلسه جدید";
+        return;
+      }
+      const hours = Math.floor(remainMs / 3600000);
+      const mins = Math.floor((remainMs % 3600000) / 60000);
+      tokenEl.textContent += ` (∼ \( {hours}س \){mins}د)`;
+      btn.disabled = false;
+      btn.textContent = "ادامه ویرایش";
+    } else {
+      btn.disabled = false;
+      btn.textContent = "شروع جلسه جدید";
+    }
   }
 
   document.getElementById("enterEditorBtn").onclick = () => {
     let sess = getSession();
 
-    // اگر جلسه فعال است → مستقیم برو به ویرایشگر
     if (sess && (sess.expire - Date.now() > 0)) {
       window.location.href = "index.html";
       return;
     }
 
-    // در غیر این صورت جلسه جدید بساز
     sess = createNewSession();
-    updateTokenDisplay();
-    window.location.href = "index.html";
+    if (sess) {
+      updateTokenDisplay();
+      window.location.href = "index.html";
+    }
   };
 
-  // آپدیت دوره‌ای
   setInterval(updateTokenDisplay, 30000);
   updateTokenDisplay();
 </script>
