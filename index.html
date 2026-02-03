@@ -33,10 +33,9 @@
 
         body { font-family: Arial, sans-serif; margin: 0; background: #0b0b0b; color: white; direction: rtl; overflow: auto; height: 100vh; }
         
-        <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s;">
-    <h2 style="color: white; margin-bottom: 20px; font-family: Tahoma;">ورود به سیستم توکن</h2>
-    <input type="text" id="passInput" placeholder="نام کاربری" style="padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; text-align: center; margin-bottom: 10px; outline: none; width: 220px;">
-    <button onclick="checkPass()" style="padding: 10px 30px; border-radius: 8px; border: none; background: #007bff; color: white; cursor: pointer; font-weight: bold;">بررسی و ورود</button>
+        <div id="sessionStatus" style="position: fixed; top: 10px; left: 10px; z-index: 9999; display: flex; gap: 10px;">
+    <button onclick="location.href='dashboard.html'" style="background: #333; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">داشبورد</button>
+    <div id="timerDisplay" style="background: rgba(255,0,0,0.7); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">03:00:00</div>
 </div>
         
         /* تغییر برای قابلیت کشویی شدن */
@@ -125,9 +124,86 @@
             width: 24px; height: 24px; border-radius: 50%; background: #333; color: white;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
+
+        /* ── استایل‌های جدید اضافه شده برای توکن و دکمه بزرگ ── */
+        #token-info {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 12px 28px;
+            border-radius: 12px;
+            border: 1px solid #444;
+            font-size: 1.1rem;
+            z-index: 9998;
+            box-shadow: 0 4px 20px rgba(0,170,255,0.2);
+        }
+
+        #big-enter-editor {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 360px;
+            height: 140px;
+            font-size: 1.9rem;
+            font-weight: bold;
+            color: white;
+            background: #0066cc;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            z-index: 9997;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            transition: all 0.3s;
+        }
+
+        #big-enter-editor:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 15px 50px rgba(0,170,255,0.5);
+        }
+
+        .glowing-border {
+            position: absolute;
+            inset: -10px;
+            border-radius: 999px;
+            pointer-events: none;
+            background: conic-gradient(#00aaff, #ff00aa, #00ffaa, #aaff00, #ffaa00, #ff0000, #00aaff);
+            animation: rotate-border 4s linear infinite;
+            filter: blur(14px);
+            opacity: 0.8;
+            z-index: -1;
+        }
+
+        @keyframes rotate-border {
+            100% { transform: rotate(360deg); }
+        }
+
+        .limit-text {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 90%;
+            text-align: center;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #ccc;
+            z-index: 9996;
+            background: rgba(0,0,0,0.6);
+            padding: 16px 32px;
+            border-radius: 12px;
+        }
+
     </style>
 </head>
-<body onload="checkLoginState(); preloadFonts();">
+<body onload="checkSessionValid(); checkLoginState(); preloadFonts();">
+
+<!-- دکمه بازگشت به داشبورد -->
+<button onclick="window.location.href='dashboard.html'" style="position: fixed; top: 50px; left: 10px; z-index: 9999; background:#444; color:#0af; border:1px solid #0af; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold;">
+    بازگشت به داشبورد
+</button>
 
 <button id="uiToggleBtn" onclick="toggleTopUI()">
     <span class="material-icons">expand_less</span>
@@ -136,6 +212,21 @@
 <div id="line-selector-ui">
     <div id="circle-container" style="display: flex; gap: 5px;"></div>
     <div class="line-next-btn" onclick="toggleLineRange()"> &gt; </div>
+</div>
+
+<!-- بخش جدید – نمایش توکن و دکمه بزرگ ورود به ویرایشگر -->
+<div id="token-info">در حال حاضر شما <strong>۱۰</strong> توکن دارید</div>
+
+<button id="big-enter-editor">
+    <div class="glowing-border"></div>
+    ورود به ویرایشگر
+</button>
+
+<div class="limit-text">
+در حال حاضر بخاطر شلوغی سرور و قیمت بالای سرور کاربران محدود شده ان،<br>
+شما برایدهر چپتر ۳ ساعت مهلت دارید تا تایپ خودتون رو انجام بدید.<br>
+توجه کنید بعد ۳ ساعت توکن شما میسوزه و به این صفحه باز میگردید<br>
+پس سعی کنید وقتی کاری ندارید شروع به تایپ کنید.
 </div>
 
 <div id="loginOverlay">
@@ -216,6 +307,58 @@
     const LOGIN_PASS = 'Qwjavid77'; 
     const GLOBAL_UPLOAD_LIMIT = 30; 
 
+    // ── متغیرهای جدید اضافه شده ──
+    const MAX_ORIGINAL_UPLOAD = 15;
+    const MAX_CLEAN_UPLOAD   = 15;
+    const SESSION_DURATION_MS = 6 * 60 * 60 * 1000;   // ۶ ساعت
+    const SESSION_KEY = "mangaEditorSession";
+
+    // چک کردن جلسه و زمان
+    function checkSessionValid() {
+        const sess = localStorage.getItem(SESSION_KEY);
+        if (!sess) {
+            window.location.href = "dashboard.html";
+            return false;
+        }
+        try {
+            const data = JSON.parse(sess);
+            if (Date.now() > data.expire) {
+                localStorage.removeItem(SESSION_KEY);
+                localStorage.removeItem('isLoggedIn');
+                alert("زمان ویرایش شما به پایان رسید. لطفاً دوباره از داشبورد شروع کنید.");
+                window.location.href = "dashboard.html";
+                return false;
+            }
+            // نمایش تایمر (اختیاری – می‌تونی حذف کنی)
+            startSessionTimer(data.expire);
+            return true;
+        } catch (e) {
+            window.location.href = "dashboard.html";
+            return false;
+        }
+    }
+
+    function startSessionTimer(expireTime) {
+        const timerEl = document.getElementById('timerDisplay');
+        if (!timerEl) return;
+
+        function update() {
+            const remain = expireTime - Date.now();
+            if (remain <= 0) {
+                timerEl.textContent = "منقضی شد";
+                clearInterval(interval);
+                setTimeout(() => location.href = "dashboard.html", 1500);
+                return;
+            }
+            const h = Math.floor(remain / 3600000).toString().padStart(2,'0');
+            const m = Math.floor((remain % 3600000)/60000).toString().padStart(2,'0');
+            const s = Math.floor((remain % 60000)/1000).toString().padStart(2,'0');
+            timerEl.textContent = `\( {h}: \){m}:${s}`;
+        }
+        update();
+        const interval = setInterval(update, 1000);
+    }
+
     // --- سیستم جدید لود فونت (Force Load) ---
     // این تابع سعی می‌کند فونت‌ها را در پس‌زمینه لود کند
     function preloadFonts() {
@@ -242,6 +385,10 @@
     function checkLoginState() {
         if(localStorage.getItem('isLoggedIn') === 'true') {
             document.getElementById('loginOverlay').style.display = 'none';
+            // مخفی کردن المان‌های داشبورد مانند وقتی لاگین شد
+            document.getElementById('big-enter-editor').style.display = 'none';
+            document.getElementById('token-info').style.display = 'none';
+            document.querySelector('.limit-text').style.display = 'none';
         }
     }
 
@@ -321,17 +468,20 @@
     });
 
     function handleFiles(files, type) {
-        if (pages.length + files.length > GLOBAL_UPLOAD_LIMIT) {
-            alert(`محدودیت سیستم: حداکثر ${GLOBAL_UPLOAD_LIMIT} فایل مجاز است.`);
+        let currentCount = pages.filter(p => type === 'original' ? p.originalSrc : p.cleanSrc).length;
+        const maxAllowed = type === 'original' ? MAX_ORIGINAL_UPLOAD : MAX_CLEAN_UPLOAD;
+
+        if (currentCount + files.length > maxAllowed) {
+            alert(`حداکثر \( {maxAllowed} فایل \){type === 'original' ? 'اصلی' : 'کلین'} مجاز است.`);
             return;
         }
+
         Array.from(files).forEach((file, i) => {
             const url = URL.createObjectURL(file);
             if (!pages[i]) {
                 pages[i] = { 
                     originalSrc: "", cleanSrc: "", 
                     markersData: [], 
-                    // textInputValue: "", // حذف شد تا متن سراسری بماند
                     fabricJSON: JSON.stringify(canvas.toJSON()) 
                 };
             }
@@ -349,7 +499,6 @@
         if (pages[currentPageIdx]) {
             pages[currentPageIdx].markersData = [...markersData];
             pages[currentPageIdx].fabricJSON = JSON.stringify(canvas.toJSON());
-            // pages[currentPageIdx].textInputValue = textInput.value; // حذف شد تا متن در صفحات ذخیره نشود
         }
     }
 
@@ -360,19 +509,13 @@
         originalImg.src = p.originalSrc || "";
         cleanImg.src = p.cleanSrc || "";
         
-        // --- تغییر: حذف کدی که متن را ریست می‌کرد تا متن سراسری بماند ---
-        // textInput.value = p.textInputValue || ""; 
-        // -------------------------------------------------------------
-        
         markersData = p.markersData || [];
         undoStack = [];
         
-        // --- تغییر جدید: ریست کردن اسکرول به بالا ---
         document.getElementById('cleanWrapper').scrollTop = 0;
         document.getElementById('originalWrapper').scrollTop = 0;
         document.getElementById('cleanWrapper').scrollLeft = 0;
         document.getElementById('originalWrapper').scrollLeft = 0;
-        // ---------------------------------------------
 
         canvas.loadFromJSON(p.fabricJSON || '{"objects":[],"background":""}', () => {
             canvas.renderAll();
@@ -411,7 +554,7 @@
 
     function renderIcon(iconName, extraScale = 1) {
         return function(ctx, left, top, styleOverride, fabricObject) {
-            const size = 26 * extraScale; // قابلیت بزرگ کردن دکمه
+            const size = 26 * extraScale; 
             ctx.save(); 
             ctx.translate(left, top);
             ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
@@ -443,9 +586,8 @@
         render: renderIcon('close') 
     });
     
-    // --- تغییر: انتقال دکمه منو به وسط-پایین ---
     ctl.styleMenuTrigger = new fabric.Control({
-        x: 0, y: 0.5, offsetX: 0, offsetY: 25, // وسط پایین
+        x: 0, y: 0.5, offsetX: 0, offsetY: 25, 
         cursorStyle: 'pointer',
         mouseUpHandler: (e, t) => {
             const isVisible = menu.style.display === 'flex';
@@ -456,28 +598,23 @@
         render: renderIcon('palette') 
     });
 
-    // --- تغییر مهم: دکمه تغییر سایز کشیدنی (Scaling) ---
     ctl.sizeResizer = new fabric.Control({
-        x: 0.5, y: 0.5, offsetX: 20, offsetY: 20, // جای قبلی پالت
+        x: 0.5, y: 0.5, offsetX: 20, offsetY: 20, 
         cursorStyle: 'nwse-resize',
-        // به جای کلیک، از متد استاندارد تغییر سایز فابریک استفاده میکنیم
         actionHandler: fabric.controlsUtils.scalingEqually, 
         actionName: 'scale',
-        render: renderIcon('format_size', 1.3) // 1.3 برابر بزرگتر، آیکون سایز
+        render: renderIcon('format_size', 1.3) 
     });
 
-    // --- تغییر مهم: دکمه تغییر عرض متن (کشیدن خطوط) در وسط راست ---
-    // جایگزینی کنترلر استاندارد mr با کنترلر سفارشی بزرگ
     ctl.mr = new fabric.Control({
-        x: 0.5, y: 0, // وسط راست
-        offsetX: 20, // کمی فاصله از کادر
+        x: 0.5, y: 0, 
+        offsetX: 20, 
         cursorStyle: 'ew-resize',
         actionHandler: fabric.controlsUtils.changeWidth,
         actionName: 'resizing',
-        render: renderIcon('compare_arrows', 1.1) // آیکون دو طرفه برای تغییر عرض
+        render: renderIcon('compare_arrows', 1.1) 
     });
 
-    // حذف کنترل قدیمی با نام قبلی برای جلوگیری از تداخل (هرچند با بازنویسی ctl حل شد)
     delete ctl.styleToggle;
 
     ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
@@ -503,18 +640,14 @@
     });
 
     textInput.addEventListener('input', () => {
-        // --- تغییر مهم: حذف خطوط خالی برای شمارش بالن‌ها ---
         const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
         
-        // محاسبه افست سراسری (تعداد بالن‌های صفحات قبل)
         const globalOffset = getGlobalMarkerOffset(currentPageIdx);
 
         fabricTexts.forEach((textObj, i) => {
-            // ایندکس واقعی در آرایه خطوط = تعداد بالن‌های صفحات قبل + ایندکس بالن فعلی در این صفحه
             const globalIndex = globalOffset + i;
 
             if(lines[globalIndex] !== undefined) {
-                // آپدیت متن اصلی برای جلوگیری از بهم ریختگی موقع تغییر مود دایره‌ای
                 textObj.originalText = lines[globalIndex];
 
                 if(textObj.circleMode) {
@@ -530,7 +663,6 @@
         textInput.style.height = textInput.scrollHeight + 'px';
     });
 
-    // --- تابع جدید برای محاسبه مجموع مارکرها در صفحات قبل ---
     function getGlobalMarkerOffset(pageIdx) {
         let count = 0;
         for(let i = 0; i < pageIdx; i++) {
@@ -562,24 +694,18 @@
         const x = Math.floor((e.clientX - rect.left) * scaleX);
         const y = Math.floor((e.clientY - rect.top) * scaleY);
         
-        // فراخوانی تابع (که الان تغییر کرده)
         const result = runFloodFill(x, y);
         
         const currentIdx = markersData.length;
-        // محاسبه ایندکس سراسری برای پیدا کردن خط درست در متن
         const globalOffset = getGlobalMarkerOffset(currentPageIdx);
         const globalIndex = globalOffset + currentIdx;
 
-        // اینجا هم فیلتر میکنیم تا اگر کاربر چند اینتر زده، متن درست انتخاب شود
         const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
         
-        // اگر متنی برای این بالن وجود ندارد، یک خط جدید به تکست باکس اضافه میکنیم
         if (lines.length <= globalIndex) {
-            // اضافه کردن به خود ولیو اصلی تکست باکس
             textInput.value += (textInput.value ? "\n" : "");
         }
         
-        // دوباره میخوانیم تا متن جدید را بگیریم
         const updatedLines = textInput.value.split('\n').filter(line => line.trim() !== '');
         const content = updatedLines[globalIndex] || "";
         markersData.push(result);
@@ -593,7 +719,6 @@
             splitByGrapheme: false 
         });
         
-        // --- ذخیره متن اصلی (Fix برای مشکل دایره‌ها) ---
         textObj.originalText = content; 
 
         fabricTexts.push(textObj);
@@ -606,27 +731,18 @@
         if (e.target && e.target.type === 'textbox') {
             const idx = fabricTexts.indexOf(e.target);
             if (idx > -1) {
-                // اینجا چون کاربر ممکنه دستی متن رو تغییر بده، ما فعلا دست به ساختار اصلی تکست باکس نمیزنیم
-                // تا ترتیب بهم نریزه، ولی اعمال تغییرات رو انجام میدیم
-                const lines = textInput.value.split('\n'); // اینجا همه خطوط رو میگیریم که ایندکس خراب نشه
-                // اما پیدا کردن ایندکس واقعی بین خطوط پر کمی پیچیده است، پس فعلا ساده نگه میداریم
-                // چون کاربر خواسته فقط "در ورودی" اینتر حساب نشه.
             }
         }
     });
 
     function runFloodFill(startX, startY) {
-        // --- تغییر: حذف کامل تشخیص هوشمند و جایگزینی با دایره ثابت 300 پیکسلی ---
-        // درخواست: "تشخیص رو حذف کن و فقط یک دایره 300 پیکسلی بذار"
-        // 300 پیکسل قطر = 150 پیکسل شعاع
-        // ساختار بازگشتی آبجکت حفظ شد تا بقیه کد خراب نشود
         return { 
             x: startX, 
             y: startY, 
-            w: 300, // استفاده به عنوان قطر فرضی برای محاسبه عرض متن
+            w: 300, 
             h: 300, 
             isCircle: true, 
-            points: [] // نیازی به نقاط نیست چون همیشه دایره است
+            points: [] 
         };
     }
 
@@ -651,13 +767,11 @@
         document.getElementById('markerOverlay').innerHTML = '';
         if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
         
-        // محاسبه افست سراسری برای نمایش عدد درست روی دایره‌ها
         const globalOffset = getGlobalMarkerOffset(currentPageIdx);
 
         markersData.forEach((data, i) => {
             fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
             if(data.isCircle) {
-                // --- تغییر: استفاده از شعاع 150 برای دایره 300 پیکسلی ---
                 fCtx.beginPath(); fCtx.arc(data.x, data.y, 150, 0, Math.PI*2); fCtx.fill();
             } else {
                 data.points.forEach(p => fCtx.fillRect(p[0], p[1], 1, 1));
@@ -666,7 +780,6 @@
             dot.className = 'marker';
             dot.style.left = (data.x / originalImg.naturalWidth * 100) + '%';
             dot.style.top = (data.y / originalImg.naturalHeight * 100) + '%';
-            // نمایش شماره به صورت سراسری (ادامه شماره‌های صفحات قبل)
             dot.innerText = globalOffset + i + 1;
             dot.onclick = (e) => { e.stopPropagation(); removeMarker(i); };
             document.getElementById('markerOverlay').appendChild(dot);
@@ -699,14 +812,11 @@
     canvas.on('object:scaling', updateMenuPos);
     canvas.on('selection:cleared', () => menu.style.display = 'none');
     
-    // --- تابع اصلی و جدید اعمال فونت ---
-    // این تابع فایل فونت را دانلود کرده و سپس اعمال می‌کند
     function applyFont(fontName, fileName) { 
         saveState(); 
         const obj = canvas.getActiveObject(); 
         if(!obj || obj.type !== 'textbox') return;
 
-        // اگر نام فایل داده نشده، فرض می‌کنیم فونت لود شده است
         if(!fileName) {
             obj.set('fontFamily', fontName);
             obj.set('dirty', true);
@@ -714,20 +824,13 @@
             return;
         }
 
-        // ساخت مسیر فایل
         const fontPath = `1/${fileName}`;
         
-        // تلاش برای لود کردن فونت
         const fontFace = new FontFace(fontName, `url(${fontPath})`);
         
         fontFace.load().then(loadedFont => {
-            // اضافه کردن فونت به داکیومنت
             document.fonts.add(loadedFont);
-            
-            // اعمال روی آبجکت
             obj.set('fontFamily', fontName);
-            
-            // رندر مجدد با کمی تاخیر برای اطمینان
             obj.set('dirty', true);
             canvas.requestRenderAll();
             setTimeout(() => canvas.requestRenderAll(), 50);
@@ -749,10 +852,9 @@
         const scaleX = rect.width / canvas.width;
         const scaleY = rect.height / canvas.height;
         
-        const menuWidth = 308; // آپدیت شده با سایز جدید
-        // تغییر جزئی برای اطمینان از قرارگیری صحیح با دکمه وسط
+        const menuWidth = 308; 
         const leftPos = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuWidth / 2);
-        const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 40; // کمی پایین تر
+        const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 40; 
         
         menu.style.left = leftPos + 'px';
         menu.style.top = topPos + 'px';
@@ -826,7 +928,6 @@
             fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl',
             editable: false
         });
-        // مقدار اولیه به originalText داده شد
         t.originalText = 'متن جدید'; 
         canvas.add(t).setActiveObject(t);
         document.getElementById('canvasHost').style.pointerEvents = "auto";
@@ -883,17 +984,13 @@
         if(!obj || obj.type !== 'textbox') return;
         saveState();
         
-        // --- تغییر اساسی: استفاده از متن ذخیره شده (originalText) برای جلوگیری از باگ تغییر متن ---
-        // اگر originalText موجود نبود، از متن فعلی استفاده کن و کاراکترهای اضافی را پاک کن
         let baseText = obj.originalText || obj.text.replace(/ـ/g, '').replace(/\n/g, ' ');
 
         if (obj.circleMode === num) {
             obj.circleMode = null;
-            // وقتی دایره خاموش میشه، متن اصلی رو برگردون
             obj.set('text', baseText);
         } else {
             obj.circleMode = num;
-            // وقتی دایره روشن میشه، تابع رو روی متن اصلی اعمال کن
             obj.set('text', applyMangaCircleLogic(baseText, num));
         }
         
@@ -932,7 +1029,7 @@
 
     function applyMangaCircleLogic(rawText, lineCount) {
         const basePatterns = {
-            2: [3, 5], 3: [3, 6, 3], 4: [3, 6, 6, 3], 5: [3, 6, 8, 6, 3],
+            2: [1, 4], 3: [3, 6, 3], 4: [3, 6, 6, 3], 5: [3, 6, 8, 6, 3],
             6: [3, 6, 8, 8, 6, 3], 7: [3, 6, 8, 10, 8, 6, 3], 8: [3, 6, 8, 10, 10, 8, 6, 3],
             9: [3, 6, 8, 10, 12, 10, 8, 6, 3], 10: [3, 6, 8, 10, 12, 12, 10, 8, 6, 3]
         };
@@ -981,36 +1078,14 @@
             return chars.join("");
         }).join("\n");
     }
-    
-   // تابع بررسی توکن - قبل از بسته شدن تگ script کپی شود
-async function checkPass() {
-    const userInput = document.getElementById('passInput').value;
-    const inputField = document.getElementById('passInput');
 
-    if (!userInput) return;
+    // ── کد جدید برای مخفی کردن المان‌های داشبورد بعد از ورود ──
+    document.getElementById('big-enter-editor').addEventListener('click', function(){
+        this.style.display = 'none';
+        document.getElementById('token-info').style.display = 'none';
+        document.querySelector('.limit-text').style.display = 'none';
+    });
 
-    try {
-        const response = await fetch('/verify-chapter', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username: userInput })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            alert("خوش آمدید! توکن باقی‌مانده: " + result.remaining);
-            document.getElementById('loginOverlay').style.opacity = '0';
-            setTimeout(() => document.getElementById('loginOverlay').remove(), 500);
-        } else {
-            alert(result.message);
-            inputField.style.borderColor = "red";
-            setTimeout(() => inputField.style.borderColor = "#444", 1000);
-        }
-    } catch (error) {
-        alert("خطا: سرور رندر هنوز آنلاین نشده یا در دسترس نیست.");
-    }
-}
 </script>
 </body>
-    </html>
+</html>
