@@ -1,22 +1,43 @@
 const express = require('express');
-const fs = require('fs');
+const session = require('express-session');
+const path = require('path');
 const app = express();
+
 app.use(express.json());
-app.use(express.static('.')); // برای خواندن فایل index.html و فونت‌ها
+app.use(express.urlencoded({ extended: true }));
 
-// مسیر چک کردن توکن
-app.post('/verify-chapter', (req, res) => {
-    const { username } = req.body;
-    let users = JSON.parse(fs.readFileSync('users.json'));
+// تنظیمات سشن برای امنیت و جلوگیری از ورود مستقیم به صفحات
+app.use(session({
+    secret: 'manga-secret-key',
+    resave: false,
+    saveUninitialized: true
+}));
 
-    if (users[username] && users[username].tokens > 0) {
-        users[username].tokens -= 1; // کم کردن یک توکن برای استفاده از این چپتر
-        fs.writeFileSync('users.json', JSON.stringify(users, null, 2));
-        res.json({ success: true, remaining: users[username].tokens });
+// دیتابیس فرضی (در واقعیت باید از MongoDB استفاده کنی)
+let users = {
+    "admin": { password: "123", tokens: 100, filesCount: 0 }
+};
+
+// میدلور برای چک کردن لاگین بودن
+const checkAuth = (req, res, next) => {
+    if (req.session.loggedIn) next();
+    else res.redirect('/login');
+};
+
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public/login.html')));
+
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (users[username] && users[username].password === password) {
+        req.session.loggedIn = true;
+        req.session.username = username;
+        res.redirect('/dashboard');
     } else {
-        res.status(403).json({ success: false, message: "توکن شما تمام شده یا کاربر یافت نشد!" });
+        res.send("رمز اشتباه است");
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.get('/dashboard', checkAuth, (req, res) => res.sendFile(path.join(__dirname, 'public/dashboard.html')));
+app.get('/editor', checkAuth, (req, res) => res.sendFile(path.join(__dirname, 'public/editor.html')));
+
+app.listen(3000, () => console.log("Server running on port 3000"));
