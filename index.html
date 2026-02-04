@@ -990,8 +990,94 @@ function startSession() {
         if (timeLeft % 30 === 0) autoSave();
     }, 1000);
 }
+// --- بخش جدید هماهنگ با داشبورد ---
+let username = "User";
+let timeLeft = 0;
 
+window.onload = function() {
+    const auth = JSON.parse(localStorage.getItem("mangaEditorAuth"));
+    const session = JSON.parse(localStorage.getItem("mangaEditorSession"));
+
+    // اگر کاربر لاگین نکرده یا جلسه فعال ندارد، به صفحه لاگین برود
+    if (!auth || !session) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    const now = Date.now();
+    const remainMs = session.expire - now;
+
+    // چک کردن انقضای زمان ۲ ساعت
+    if (remainMs <= 0) {
+        alert("زمان ۲ ساعته شما به پایان رسیده است!");
+        localStorage.removeItem("mangaEditorSession");
+        window.location.href = "dashboard.html";
+        return;
+    }
+
+    // مقداردهی متغیرها
+    username = auth.user;
+    timeLeft = Math.floor(remainMs / 1000); 
+
+    // حذف لایه اورلی قدیمی (اگر در HTML شما هنوز وجود دارد)
+    const overlay = document.getElementById('loginOverlay');
+    if (overlay) overlay.style.display = 'none';
+
+    startSession(); // فراخوانی تابع اصلی برای شروع کار
+};
+
+function startSession() {
+    // لود کردن ذخیره خودکار قبلی کاربر
+    const savedData = localStorage.getItem('manga_autosave_' + username);
+    if (savedData && canvas) {
+        canvas.loadFromJSON(savedData, () => {
+            canvas.renderAll();
+            console.log("تغییرات قبلی بازیابی شد.");
+        });
+    }
+
+    // آپدیت تایمر هر ثانیه
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        
+        let h = Math.floor(timeLeft / 3600);
+        let m = Math.floor((timeLeft % 3600) / 60);
+        let s = timeLeft % 60;
+
+        const display = document.getElementById('timerDisplay');
+        if (display) {
+            display.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // وقتی زمان صفر شد
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert("زمان شما تمام شد! به داشبورد منتقل می‌شوید.");
+            // پاک کردن ذخیره خودکار برای چپتر بعدی
+            localStorage.removeItem('manga_autosave_' + username);
+            localStorage.removeItem("mangaEditorSession");
+            window.location.href = 'dashboard.html';
+        }
+
+        // ذخیره خودکار هر ۳۰ ثانیه
+        if (timeLeft % 30 === 0) autoSave();
+    }, 1000);
+}
+
+function autoSave() {
+    if (!canvas) return;
+    const json = JSON.stringify(canvas.toJSON());
+    localStorage.setItem('manga_autosave_' + username, json);
+    console.log("ذخیره خودکار انجام شد.");
+}
+
+function exitToDashboard() {
+    if (confirm("آیا مطمئن هستید؟ اگر خارج شوید زمان شما متوقف نمی‌شود.")) {
+        window.location.href = 'dashboard.html';
+    }
+    }
 startSession();
 </script>
 </body>
 </html>
+
