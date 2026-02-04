@@ -2,62 +2,50 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>احراز هویت - ویرایشگر مانگا</title>
   <style>
-    body {
-      margin:0; height:100vh; background:#0b0b0b; color:#eee; font-family: system-ui, sans-serif;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      text-align:center;
-    }
-    h1 { font-size:2rem; color:#0af; }
+    body { margin:0; height:100vh; background:#0b0b0b; color:#eee; font-family: system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    h1 { color:#0af; }
     form { display:flex; flex-direction:column; gap:1rem; width:300px; }
-    input { padding:0.8rem; border:1px solid #444; background:#222; color:#eee; border-radius:8px; text-align:center; }
+    input { padding:0.8rem; border:1px solid #444; background:#222; color:#eee; border-radius:8px; text-align:center; outline:none; }
     button { padding:0.8rem; background:#0af; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
-    button:hover { background:#08f; }
-    .error { color:#f33; margin-top:1rem; }
+    .error { color:#f33; margin-top:1rem; font-size:0.9rem; }
   </style>
 </head>
 <body>
+  <h1>ورود به سیستم</h1>
+  <form id="loginForm">
+    <input type="text" id="username" placeholder="نام کاربری" required>
+    <input type="password" id="password" placeholder="رمز عبور" required>
+    <button type="submit">ورود</button>
+  </form>
+  <div id="errorMsg" class="error"></div>
 
-<h1>احراز هویت</h1>
+  <script>
+    // لیست کاربران (می‌توانی تغییر دهی)
+    const USERS = {
+      "admin": { password: "123", tokens: 10 },
+      "user1": { password: "456", tokens: 5 }
+    };
 
-<form id="loginForm">
-  <input type="text" id="username" placeholder="نام کاربری" required>
-  <input type="password" id="password" placeholder="پسورد" required>
-  <button type="submit">ورود</button>
-</form>
-
-<div id="errorMsg" class="error"></div>
-
-<script>
-  // لیست کاربران سخت‌کد شده (تغییر بده)
-  const USERS = {
-    "user1": { password: "pass123", tokens: 10 },
-    "user2": { password: "pass456", tokens: 5 },
-    // اضافه کن هر چی می‌خوای
-  };
-
-  const STORAGE_KEY = "mangaEditorAuth";
-
-  document.getElementById("loginForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const user = document.getElementById("username").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    const errorEl = document.getElementById("errorMsg");
-
-    if (USERS[user] && USERS[user].password === pass) {
-      const authData = {
-        user: user,
-        tokens: USERS[user].tokens,
-        loggedIn: true
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-      window.location.href = "dashboard.html";
-    } else {
-      errorEl.textContent = "نام کاربری یا پسورد اشتباه است.";
-    }
-  });
-</script>
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      
+      if (USERS[user] && USERS[user].password === pass) {
+        // ذخیره اطلاعات به شکلی که ویرایشگر و داشبورد بفهمند
+        const authData = {
+          user: user,
+          tokens: USERS[user].tokens,
+          loggedIn: true
+        };
+        localStorage.setItem("mangaEditorAuth", JSON.stringify(authData));
+        window.location.href = "dashboard.html";
+      } else {
+        document.getElementById("errorMsg").textContent = "نام کاربری یا رمز اشتباه است.";
+      }
+    });
+  </script>
 </body>
 </html>
