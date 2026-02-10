@@ -3,27 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ویرایشگر مانگا - نسخه فوق سریع</title>
+    <title>ویرایشگر مانگا - نسخه ریش‌سفید (اصلاح شده + زیپ)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 
     <style>
-        /* استایل‌های بخش ورود */
-        #loginOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #0b0b0b; z-index: 10000; display: flex; 
-            flex-direction: column; align-items: center; justify-content: center;
-            transition: 0.5s;
-        }
-        #loginOverlay input {
-            padding: 12px; border-radius: 8px; border: 1px solid #444; 
-            background: #222; color: white; text-align: center; margin-bottom: 10px;
-            outline: none; width: 200px;
-        }
-        #loginOverlay input.error { border-color: #dc3545; box-shadow: 0 0 10px #dc3545; }
-
-        /* تعریف CSS برای اطمینان، اما JS کار اصلی را انجام می‌دهد */
+        /* فونت‌ها */
         @font-face { font-family: 'font'; src: url('1/font.ttf'); }
         @font-face { font-family: 'a.gam.azad'; src: url('1/a.gam.azad.ttf'); }
         @font-face { font-family: 'bfarnaz'; src: url('1/bfarnaz.ttf'); }
@@ -31,23 +18,21 @@
         @font-face { font-family: 'bmorvard'; src: url('1/bmorvard.ttf'); }
         @font-face { font-family: 'bhoma'; src: url('1/bhoma.ttf'); }
 
-        body { font-family: Arial, sans-serif; margin: 0; background: #0b0b0b; color: white; direction: rtl; overflow: auto; height: 100vh; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #0b0b0b; color: white; direction: rtl; overflow: hidden; height: 100vh; }
         
-        /* تغییر برای قابلیت کشویی شدن */
+        /* پنل بالا */
         #topUI { 
             padding: 10px; background: #1a1a1a; border-bottom: 2px solid #333; 
-            min-height: 135px; max-height: 40vh; overflow-y: auto; box-sizing: border-box; 
+            height: 165px; 
+            box-sizing: border-box; 
             transition: all 0.4s ease-in-out;
+            display: flex; flex-direction: column;
+            z-index: 1000; position: relative;
         }
         #topUI.collapsed {
-            min-height: 0;
-            max-height: 0;
-            padding: 0;
-            overflow: hidden;
-            border-bottom: none;
+            height: 0; padding: 0; overflow: hidden; border-bottom: none;
         }
 
-        /* دکمه جدید برای جمع کردن منو */
         #uiToggleBtn {
             position: fixed; top: 10px; left: 10px; z-index: 9999;
             background: #007bff; color: white; border: none; border-radius: 50%;
@@ -56,72 +41,99 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
-        textarea { width: 100%; min-height: 50px; padding: 8px; font-size: 14px; box-sizing: border-box; border-radius: 5px; background: #222; color: white; border: 1px solid #444; resize: vertical; }
+        /* استایل باکس متن */
+        .input-container {
+            flex: 1; display: flex; gap: 5px; height: 100%;
+        }
+        textarea { 
+            flex: 1; height: 85px; padding: 10px; font-size: 14px; 
+            box-sizing: border-box; border-radius: 5px; background: #222; 
+            color: #fff; border: 1px solid #444; resize: none; 
+            line-height: 24px; white-space: pre; overflow-y: scroll;
+        }
+        textarea:focus { outline: 2px solid #007bff; background: #2a2a2a; }
         
-        .buttons { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
-        .upload-btn { display: inline-block; padding: 6px 12px; font-size: 12px; background-color: #007bff; color: white; cursor: pointer; border-radius: 5px; border: none; text-decoration: none; }
-        
-        #pagesList { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto; padding: 5px; background: #000; border-radius: 5px; }
-        .page-thumb { padding: 5px 15px; background: #333; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; transition: 0.2s; }
-        .page-thumb.active { background: #007bff; border-color: #fff; color: white; font-weight: bold; }
+        .buttons { margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+        .upload-btn { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; font-size: 11px; background-color: #007bff; color: white; cursor: pointer; border-radius: 4px; border: none; text-decoration: none; height: 28px; transition: 0.2s; }
+        .upload-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .upload-btn:disabled { background-color: #555 !important; cursor: not-allowed; opacity: 0.7; transform: none; }
 
-        #mainContainer { display: flex; height: calc(100vh - 210px); gap: 2px; background: #111; overflow: hidden; transition: height 0.4s; }
-        /* وقتی منو بسته است ارتفاع کانتینر زیاد شود */
+        /* استایل لیست صفحات */
+        #pagesList { display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; padding: 4px; background: #000; border-radius: 5px; height: 40px; align-items: center; }
+        .page-thumb { 
+            padding: 4px 12px; background: #333; border: 2px solid #555; border-radius: 6px; 
+            cursor: pointer; font-size: 14px; white-space: nowrap; transition: 0.2s; 
+            color: #fff; font-weight: 900; text-shadow: 0 1px 3px rgba(0,0,0,1);
+        }
+        .page-thumb:hover { background: #444; border-color: #777; }
+        .page-thumb.active { background: #007bff; border-color: #fff; color: white; transform: scale(1.05); z-index: 2; }
+
+        #mainContainer { display: flex; height: calc(100vh - 165px); gap: 2px; background: #111; overflow: hidden; transition: height 0.4s; }
         body.ui-collapsed #mainContainer { height: 100vh; }
         
         .image-wrapper { flex: 1; overflow: auto; position: relative; background: #000; border: 1px solid #333; transition: all 0.3s ease; }
         #canvasHost { position: absolute; top: 0; left: 0; pointer-events: none; }
         .canvas-container-wrapper { position: relative; display: block; width: fit-content; margin: 0 auto; }
         img { display: block; user-select: none; pointer-events: auto; max-width: none; }
+        
         #floodCanvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+        #markerOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
 
         .marker {
-            position: absolute; background: red; color: white; width: 24px; height: 24px; border-radius: 50%;
+            position: absolute; background: rgba(255, 0, 0, 0.75); color: white; width: 24px; height: 24px; border-radius: 50%;
             text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; cursor: pointer;
             z-index: 100; transform: translate(-50%, -50%); border: 2px solid white;
+            pointer-events: auto; box-shadow: 0 3px 6px rgba(0,0,0,0.6);
         }
+        .marker:hover { background: red; transform: translate(-50%, -50%) scale(1.2); }
 
+        /* منوی استایل */
         #style-menu {
-            position: fixed; background: rgba(15, 15, 15, 0.98); border: 2px solid #007bff; border-radius: 12px;
-            display: none; flex-direction: column; 
-            /* --- تغییر: افزایش سایز منو (34px از هر طرف یعنی حدود 68 پیکسل اضافه به عرض و پدینگ بیشتر) --- */
-            width: 308px; padding: 44px; 
-            z-index: 99999;
-            box-shadow: 0 5px 35px rgba(0,0,0,1); direction: rtl;
+            position: fixed; background: rgba(20, 20, 20, 0.95); border: 1px solid #007bff; border-radius: 8px;
+            display: none; flex-direction: column; width: 280px; padding: 15px; z-index: 99999;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8); direction: rtl; backdrop-filter: blur(5px);
         }
         
-        .menu-section { color: #007bff; font-size: 10px; margin: 5px 0; border-bottom: 1px solid #333; font-weight: bold; }
-        .style-grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; }
-        .style-item { width: 48%; background: #222; color: white; padding: 5px 0; text-align: center; font-size: 10px; border-radius: 4px; cursor: pointer; border: 1px solid #444; }
-        .color-palette { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-        #customColor, #strokeColor { width: 25px; height: 25px; border: none; cursor: pointer; }
-        /* استایل دکمه‌های رنگ سریع */
-        .quick-color { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #fff; cursor: pointer; }
-
-        .btn-action { background: #28a745; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
+        .menu-section { color: #007bff; font-size: 11px; margin: 8px 0 4px 0; border-bottom: 1px solid #333; font-weight: bold; padding-bottom: 2px; }
+        .style-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+        .style-item { flex: 1 1 30%; background: #333; color: #ddd; padding: 4px 0; text-align: center; font-size: 11px; border-radius: 3px; cursor: pointer; border: 1px solid #444; transition: 0.2s; }
+        .style-item:hover { background: #444; color: #fff; border-color: #666; }
+        
+        .color-palette { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+        #customColor, #strokeColor { width: 30px; height: 30px; border: none; cursor: pointer; background: none; padding: 0; }
+        .quick-color { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #444; cursor: pointer; transition: 0.2s; }
+        
+        .btn-action { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%; margin-top: 5px; }
         .hidden-panel { display: none !important; }
         
-        .focus-active #topUI { opacity: 0.5; filter: grayscale(1); }
+        /* حالت تمرکز */
+        .focus-active #topUI { opacity: 0.1; pointer-events: none; }
+        .focus-active #focusModeBtn {
+            position: fixed; top: 10px; right: 60px; z-index: 10001; 
+            pointer-events: auto !important; opacity: 1 !important;
+            box-shadow: 0 0 10px #007bff;
+        }
         .focus-active #cleanWrapper { flex: 100%; } 
 
         #line-selector-ui {
-            position: fixed; display: none; gap: 8px; z-index: 100000; align-items: center; direction: ltr;
+            position: fixed; display: none; gap: 5px; z-index: 100000; align-items: center; direction: ltr;
+            background: rgba(0,0,0,0.6); padding: 5px; border-radius: 20px;
         }
         .line-circle {
-            width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #000;
+            width: 28px; height: 28px; border-radius: 50%; background: #222; color: #fff;
             display: flex; align-items: center; justify-content: center; font-weight: bold;
-            cursor: pointer; border: 2px solid #007bff; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            font-size: 14px; transition: 0.2s;
+            cursor: pointer; border: 1px solid #555;
+            font-size: 12px; transition: 0.2s;
         }
-        .line-circle:hover { transform: scale(1.1); background: #007bff; color: white; }
-        .line-circle.active { background: #007bff; color: white; }
+        .line-circle:hover { transform: scale(1.15); background: #007bff; border-color: #007bff; }
+        .line-circle.active { background: #007bff; border-color: #fff; box-shadow: 0 0 8px #007bff; }
         .line-next-btn {
-            width: 24px; height: 24px; border-radius: 50%; background: #333; color: white;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            width: 20px; height: 20px; border-radius: 50%; background: #444; color: white;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px;
         }
     </style>
 </head>
-<body onload="checkLoginState(); preloadFonts();">
+<body onload="preloadFonts();">
 
 <button id="uiToggleBtn" onclick="toggleTopUI()">
     <span class="material-icons">expand_less</span>
@@ -132,28 +144,25 @@
     <div class="line-next-btn" onclick="toggleLineRange()"> &gt; </div>
 </div>
 
-<div id="loginOverlay">
-    <h3 style="margin-bottom:20px;">پنل مدیریت ویرایشگر</h3>
-    <input type="password" id="passInput" placeholder="رمز عبور را وارد کنید...">
-    <button class="upload-btn" onclick="checkPass()">تایید و ورود</button>
-</div>
 <div id="topUI">
-    <textarea id="textInput" placeholder="متن ترجمه (هر خط یک بالن)..."></textarea>
+    <div class="input-container">
+        <textarea id="textInput" placeholder="متن‌ها را اینجا وارد کنید...&#10;خطوط خالی کاملاً نادیده گرفته می‌شوند.&#10;دکمه حذف روی حباب، متن را شیفت می‌دهد."></textarea>
+    </div>
     <div class="buttons">
-        <label class="upload-btn" for="uploadOriginal">آپلود اصلی‌ها (چندتایی)</label>
+        <label class="upload-btn" for="uploadOriginal"><span class="material-icons" style="font-size:14px;margin-left:4px;">image</span>اصلی</label>
         <input type="file" id="uploadOriginal" accept="image/*" multiple style="display:none">
         
-        <label class="upload-btn" for="uploadClean" style="background:#6c757d">آپلود کلین‌ها (چندتایی)</label>
+        <label class="upload-btn" for="uploadClean" style="background:#6c757d"><span class="material-icons" style="font-size:14px;margin-left:4px;">brush</span>کلین</label>
         <input type="file" id="uploadClean" accept="image/*" multiple style="display:none">
         
-        <button id="toggleOriginal" class="upload-btn" style="background: #dc3545;">نمایش/مخفی اصلی</button>
-        <button id="toggleClean" class="upload-btn" style="background: #28a745;">نمایش/مخفی کلین</button>
+        <button id="toggleOriginal" class="upload-btn" style="background: #dc3545;">چپ/راست (اصلی)</button>
+        <button id="toggleClean" class="upload-btn" style="background: #28a745;">چپ/راست (کلین)</button>
         
-        <button id="downloadBtn" class="upload-btn" style="background: #ffc107; color: #000;">دانلود همه‌ی صفحات</button>
-        <button onclick="addNewFabricText()" class="upload-btn" style="background: #e83e8c;">+ متن دستی</button>
+        <button id="downloadBtn" class="upload-btn" style="background: #ffc107; color: #000;">دانلود همه (ZIP)</button>
+        <button onclick="addNewFabricText()" class="upload-btn" style="background: #e83e8c;">+ دستی</button>
         <button id="undoBtn" class="upload-btn" style="background: #6f42c1;">برگشت (Undo)</button>
-        <button onclick="fullReset()" class="upload-btn" style="background: #333;">پاکسازی کل پروژه</button>
-        <button id="focusModeBtn" class="upload-btn" style="background: #000; border: 1px solid #007bff;">حالت تمرکز (سرعت بالا)</button>
+        <button onclick="fullReset()" class="upload-btn" style="background: #333;">ریست</button>
+        <button id="focusModeBtn" class="upload-btn" style="background: #000; border: 1px solid #007bff;">حالت تمرکز</button>
     </div>
     <div id="pagesList"></div>
 </div>
@@ -170,7 +179,7 @@
 
     <div class="image-wrapper" id="originalWrapper">
         <div class="canvas-container-wrapper">
-            <img id="originalImage" src="" alt="">
+            <img id="originalImage" src="" alt="" style="cursor: crosshair;">
             <canvas id="floodCanvas"></canvas>
             <div id="markerOverlay"></div>
         </div>
@@ -184,34 +193,36 @@
         <div class="style-item" onclick="applyFont('a.gam.azad', 'a.gam.azad.ttf')">لرزش</div>
         <div class="style-item" onclick="applyFont('bfarnaz', 'bfarnaz.ttf')">مستطیل</div>
         <div class="style-item" onclick="applyFont('afsaneh', 'afsaneh.ttf')">فریاد</div>
-        <div class="style-item" onclick="applyFont('bmorvard', 'bmorvard.ttf')">فکر وخورشیدی</div>
-        <div class="style-item" onclick="applyFont('bhoma', 'bhoma.ttf')">بیرون بالن</div>
+        <div class="style-item" onclick="applyFont('bmorvard', 'bmorvard.ttf')">فکر</div>
+        <div class="style-item" onclick="applyFont('bhoma', 'bhoma.ttf')">توضیح</div>
     </div>
-    <div class="menu-section">رنگ و هاله (سریع)</div>
+    <div class="menu-section">رنگ متن</div>
     <div class="color-palette">
         <div class="quick-color" style="background:#000000" onclick="changeColor('#000000')"></div>
         <div class="quick-color" style="background:#ffffff" onclick="changeColor('#ffffff')"></div>
         <div class="quick-color" style="background:#ff0000" onclick="changeColor('#ff0000')"></div>
         <div class="quick-color" style="background:#0000ff" onclick="changeColor('#0000ff')"></div>
-    </div>
-    <div class="menu-section">تنظیم دستی</div>
-    <div class="color-palette">
         <input type="color" id="customColor" oninput="changeColor(this.value)">
+    </div>
+    <div class="menu-section">دورخط (Stroke)</div>
+    <div class="color-palette">
+        <div class="quick-color" style="background:transparent; border:1px dashed #fff" onclick="changeStrokeWidth(0)"></div>
+        <div class="quick-color" style="background:#fff" onclick="changeStrokeColor('#ffffff'); changeStrokeWidth(3)"></div>
         <input type="color" id="strokeColor" oninput="changeStrokeColor(this.value)">
         <input type="range" id="strokeWidth" min="0" max="10" value="0" step="0.5" oninput="changeStrokeWidth(this.value)" style="width: 60px;">
     </div>
-    <div class="menu-section">فونت جدید</div>
+    <div class="menu-section">فونت شخصی</div>
     <input type="file" id="fontUpload" accept=".ttf,.otf" style="display:none" onchange="addNewFont(event)">
-    <button class="btn-action" onclick="document.getElementById('fontUpload').click()">+ آپلود فونت</button>
+    <button class="btn-action" onclick="document.getElementById('fontUpload').click()">آپلود فونت</button>
     <div id="custom-fonts-list" class="style-grid" style="margin-top:5px;"></div>
 </div>
 
 <script>
-    const LOGIN_PASS = 'Qwjavid77'; 
-    const GLOBAL_UPLOAD_LIMIT = 30; 
+    const GLOBAL_UPLOAD_LIMIT = 50; 
+    const MAX_UNDO = 17;
 
-    // --- سیستم جدید لود فونت (Force Load) ---
-    // این تابع سعی می‌کند فونت‌ها را در پس‌زمینه لود کند
+    let globalSkippedIndices = new Set();
+
     function preloadFonts() {
         const fonts = [
             { name: 'font', url: '1/font.ttf' },
@@ -226,39 +237,17 @@
             const fontFace = new FontFace(f.name, `url(${f.url})`);
             fontFace.load().then((loadedFont) => {
                 document.fonts.add(loadedFont);
-                console.log(`Font ${f.name} loaded successfully.`);
-            }).catch(err => {
-                console.warn(`Failed to load font ${f.name}. Check if file exists in '1/' folder.`, err);
-            });
+            }).catch(err => console.warn(`Font ${f.name} error.`, err));
         });
     }
 
-    function checkLoginState() {
-        if(localStorage.getItem('isLoggedIn') === 'true') {
-            document.getElementById('loginOverlay').style.display = 'none';
-        }
-    }
-
-    function checkPass() {
-        const input = document.getElementById('passInput');
-        if(input.value === LOGIN_PASS) {
-            localStorage.setItem('isLoggedIn', 'true'); 
-            document.getElementById('loginOverlay').style.opacity = '0';
-            setTimeout(() => { document.getElementById('loginOverlay').style.display = 'none'; }, 500);
-        } else {
-            input.classList.add('error');
-            setTimeout(() => { input.classList.remove('error'); }, 500);
-        }
-    }
-
     function fullReset() {
-        if(confirm("آیا مطمئن هستید؟ همه‌ی صفحات و وضعیت ورود پاک خواهد شد.")) {
-            localStorage.removeItem('isLoggedIn');
+        if(confirm("همه چیز پاک شود؟")) {
+            globalSkippedIndices.clear();
             location.reload();
         }
     }
 
-    // تابع جمع و باز کردن منوی بالا
     function toggleTopUI() {
         const topUI = document.getElementById('topUI');
         const btn = document.getElementById('uiToggleBtn');
@@ -279,7 +268,6 @@
     let markersData = [];
     let fabricTexts = [];
     let undoStack = [];
-    const MAX_UNDO = 10;
 
     const originalImg = document.getElementById('originalImage');
     const cleanImg = document.getElementById('cleanImage');
@@ -297,7 +285,7 @@
 
     fabric.Object.prototype.set({
         transparentCorners: false, cornerStyle: 'circle', cornerColor: '#007bff', 
-        cornerStrokeColor: '#fff', cornerSize: 16, padding: 15,
+        cornerStrokeColor: '#fff', cornerSize: 12, padding: 5,
         originX: 'center', originY: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
     });
 
@@ -306,8 +294,8 @@
             let delta = opt.e.deltaY;
             let zoom = canvas.getZoom();
             zoom *= 0.999 ** delta;
-            if (zoom > 120) zoom = 120;
-            if (zoom < 0.01) zoom = 0.01;
+            if (zoom > 10) zoom = 10;
+            if (zoom < 0.1) zoom = 0.1;
             canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
             opt.e.preventDefault();
             opt.e.stopPropagation();
@@ -315,17 +303,12 @@
     });
 
     function handleFiles(files, type) {
-        if (pages.length + files.length > GLOBAL_UPLOAD_LIMIT) {
-            alert(`محدودیت سیستم: حداکثر ${GLOBAL_UPLOAD_LIMIT} فایل مجاز است.`);
-            return;
-        }
         Array.from(files).forEach((file, i) => {
             const url = URL.createObjectURL(file);
             if (!pages[i]) {
                 pages[i] = { 
                     originalSrc: "", cleanSrc: "", 
                     markersData: [], 
-                    // textInputValue: "", // حذف شد تا متن سراسری بماند
                     fabricJSON: JSON.stringify(canvas.toJSON()) 
                 };
             }
@@ -343,34 +326,34 @@
         if (pages[currentPageIdx]) {
             pages[currentPageIdx].markersData = [...markersData];
             pages[currentPageIdx].fabricJSON = JSON.stringify(canvas.toJSON());
-            // pages[currentPageIdx].textInputValue = textInput.value; // حذف شد تا متن در صفحات ذخیره نشود
         }
     }
 
+    // --- اصلاح شده برای سرعت بالاتر ---
     function switchPage(idx) {
         saveCurrentPageState();
         currentPageIdx = idx;
         const p = pages[idx];
+        
+        // غیرفعال کردن رندر خودکار هنگام لود
+        canvas.renderOnAddRemove = false; 
+
         originalImg.src = p.originalSrc || "";
         cleanImg.src = p.cleanSrc || "";
-        
-        // --- تغییر: حذف کدی که متن را ریست می‌کرد تا متن سراسری بماند ---
-        // textInput.value = p.textInputValue || ""; 
-        // -------------------------------------------------------------
         
         markersData = p.markersData || [];
         undoStack = [];
         
-        // --- تغییر جدید: ریست کردن اسکرول به بالا ---
-        document.getElementById('cleanWrapper').scrollTop = 0;
-        document.getElementById('originalWrapper').scrollTop = 0;
-        document.getElementById('cleanWrapper').scrollLeft = 0;
-        document.getElementById('originalWrapper').scrollLeft = 0;
-        // ---------------------------------------------
-
+        // پاک کردن دستی برای اطمینان
+        canvas.clear(); 
+        
         canvas.loadFromJSON(p.fabricJSON || '{"objects":[],"background":""}', () => {
-            canvas.renderAll();
+            // فعال کردن مجدد رندر
+            canvas.renderOnAddRemove = true;
+            canvas.requestRenderAll();
+            
             fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
+            syncTextFromGlobalSource();
             updateThumbs();
             drawUI();
         });
@@ -382,7 +365,7 @@
         pages.forEach((p, i) => {
             const div = document.createElement('div');
             div.className = `page-thumb ${i === currentPageIdx ? 'active' : ''}`;
-            div.innerText = `صفحه ${i + 1}`;
+            div.innerText = `${i + 1}`;
             div.onclick = () => switchPage(i);
             list.appendChild(div);
         });
@@ -399,20 +382,21 @@
             canvas.loadFromJSON(state, () => {
                 canvas.renderAll();
                 fabricTexts = canvas.getObjects().filter(obj => obj.type === 'textbox');
+                syncTextFromGlobalSource();
             });
         }
     });
 
     function renderIcon(iconName, extraScale = 1) {
         return function(ctx, left, top, styleOverride, fabricObject) {
-            const size = 26 * extraScale; // قابلیت بزرگ کردن دکمه
+            const size = 20 * extraScale; 
             ctx.save(); 
             ctx.translate(left, top);
             ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
             ctx.beginPath(); 
             ctx.arc(0, 0, size/2, 0, Math.PI * 2, false);
             ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#007bff"; ctx.stroke();
-            ctx.fillStyle = "#000"; ctx.font = (16 * extraScale) + 'px "Material Icons"';
+            ctx.fillStyle = "#000"; ctx.font = (12 * extraScale) + 'px "Material Icons"';
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(iconName, 0, 0); 
             ctx.restore();
@@ -422,25 +406,24 @@
     const ctl = fabric.Textbox.prototype.controls;
     
     ctl.delete = new fabric.Control({ 
-        x: -0.5, y: -0.5, offsetX: -20, offsetY: -20, 
+        x: -0.5, y: -0.5, offsetX: -15, offsetY: -15, 
         mouseUpHandler: (e, t) => {
             saveState();
-            const idx = fabricTexts.indexOf(t.target);
-            if(idx > -1) {
-                fabricTexts.splice(idx, 1);
-                canvas.remove(t.target);
-                shiftTextsAndMarkers();
+            const target = t.target;
+            if (target && typeof target.associatedLineIndex === 'number') {
+                globalSkippedIndices.add(target.associatedLineIndex);
+                syncTextFromGlobalSource();
             } else {
-                canvas.remove(t.target);
+                canvas.remove(target);
+                fabricTexts = fabricTexts.filter(ft => ft !== target);
             }
+            return true;
         }, 
         render: renderIcon('close') 
     });
     
-    // --- تغییر: انتقال دکمه منو به وسط-پایین ---
     ctl.styleMenuTrigger = new fabric.Control({
-        x: 0, y: 0.5, offsetX: 0, offsetY: 25, // وسط پایین
-        cursorStyle: 'pointer',
+        x: 0, y: 0.5, offsetX: 0, offsetY: 20, cursorStyle: 'pointer',
         mouseUpHandler: (e, t) => {
             const isVisible = menu.style.display === 'flex';
             menu.style.display = isVisible ? 'none' : 'flex';
@@ -450,82 +433,39 @@
         render: renderIcon('palette') 
     });
 
-    // --- تغییر مهم: دکمه تغییر سایز کشیدنی (Scaling) ---
     ctl.sizeResizer = new fabric.Control({
-        x: 0.5, y: 0.5, offsetX: 20, offsetY: 20, // جای قبلی پالت
-        cursorStyle: 'nwse-resize',
-        // به جای کلیک، از متد استاندارد تغییر سایز فابریک استفاده میکنیم
-        actionHandler: fabric.controlsUtils.scalingEqually, 
-        actionName: 'scale',
-        render: renderIcon('format_size', 1.3) // 1.3 برابر بزرگتر، آیکون سایز
+        x: 0.5, y: 0.5, offsetX: 15, offsetY: 15, cursorStyle: 'nwse-resize',
+        actionHandler: fabric.controlsUtils.scalingEqually, actionName: 'scale',
+        render: renderIcon('format_size', 1.1) 
     });
 
-    // --- تغییر مهم: دکمه تغییر عرض متن (کشیدن خطوط) در وسط راست ---
-    // جایگزینی کنترلر استاندارد mr با کنترلر سفارشی بزرگ
     ctl.mr = new fabric.Control({
-        x: 0.5, y: 0, // وسط راست
-        offsetX: 20, // کمی فاصله از کادر
-        cursorStyle: 'ew-resize',
-        actionHandler: fabric.controlsUtils.changeWidth,
-        actionName: 'resizing',
-        render: renderIcon('compare_arrows', 1.1) // آیکون دو طرفه برای تغییر عرض
+        x: 0.5, y: 0, offsetX: 15, cursorStyle: 'ew-resize',
+        actionHandler: fabric.controlsUtils.changeWidth, actionName: 'resizing',
+        render: renderIcon('compare_arrows', 1) 
     });
 
-    // حذف کنترل قدیمی با نام قبلی برای جلوگیری از تداخل (هرچند با بازنویسی ctl حل شد)
     delete ctl.styleToggle;
+    ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 15, offsetY: -15, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
 
-    ctl.mtr = new fabric.Control({ x: 0.5, y: -0.5, offsetX: 20, offsetY: -20, actionHandler: fabric.controlsUtils.rotationWithSnapping, render: renderIcon('sync') });
-
-    ctl.edit = new fabric.Control({
-        x: 0, y: -0.5, offsetX: 0, offsetY: -25, 
-        cursorStyle: 'pointer',
-        mouseUpHandler: (e, transform) => {
-            const target = transform.target;
-            target.set('editable', true);
-            target.enterEditing();
-            target.selectAll();
-            canvas.renderAll();
-            return true;
-        },
-        render: renderIcon('edit') 
-    });
-
-    canvas.on('text:editing:exited', (e) => {
-        if(e.target) {
-            e.target.set('editable', false);
-        }
-    });
-
-    textInput.addEventListener('input', () => {
-        // --- تغییر مهم: حذف خطوط خالی برای شمارش بالن‌ها ---
-        const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
-        
-        // محاسبه افست سراسری (تعداد بالن‌های صفحات قبل)
-        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
-
-        fabricTexts.forEach((textObj, i) => {
-            // ایندکس واقعی در آرایه خطوط = تعداد بالن‌های صفحات قبل + ایندکس بالن فعلی در این صفحه
-            const globalIndex = globalOffset + i;
-
-            if(lines[globalIndex] !== undefined) {
-                // آپدیت متن اصلی برای جلوگیری از بهم ریختگی موقع تغییر مود دایره‌ای
-                textObj.originalText = lines[globalIndex];
-
-                if(textObj.circleMode) {
-                    textObj.set('text', applyMangaCircleLogic(lines[globalIndex], textObj.circleMode));
-                } else {
-                    textObj.set('text', lines[globalIndex]);
-                }
-                if(textObj.text.length < 10) textObj.set('width', 100);
-                canvas.renderAll();
+    function getAvailableLines() {
+        const rawLines = textInput.value.split('\n');
+        let available = [];
+        rawLines.forEach((line, index) => {
+            // با استفاده از trim تمام فاصله‌های اضافی اول و آخر گرفته می‌شود
+            // اگر بعد از این کار طول متن بیشتر از 0 بود، یعنی متن واقعی است
+            if (line.trim().length > 0 && !globalSkippedIndices.has(index)) {
+                available.push({ text: line, originalIndex: index });
             }
         });
-        textInput.style.height = 'auto';
-        textInput.style.height = textInput.scrollHeight + 'px';
+        return available;
+    }
+
+    textInput.addEventListener('input', () => {
+        syncTextFromGlobalSource();
     });
 
-    // --- تابع جدید برای محاسبه مجموع مارکرها در صفحات قبل ---
-    function getGlobalMarkerOffset(pageIdx) {
+    function getPreviousPagesBubbleCount(pageIdx) {
         let count = 0;
         for(let i = 0; i < pageIdx; i++) {
             if(pages[i] && pages[i].markersData) {
@@ -533,6 +473,44 @@
             }
         }
         return count;
+    }
+
+    function syncTextFromGlobalSource() {
+        const availableLines = getAvailableLines();
+        const startOffset = getPreviousPagesBubbleCount(currentPageIdx);
+
+        fabricTexts.forEach((textObj, i) => {
+            const globalBubbleIndex = startOffset + i;
+            if (globalBubbleIndex < availableLines.length) {
+                const lineData = availableLines[globalBubbleIndex];
+                const newText = lineData.text;
+                textObj.visible = true;
+                textObj.originalText = newText;
+                textObj.associatedLineIndex = lineData.originalIndex;
+                const mode = textObj.circleMode || (newText.length > 8 ? 3 : null);
+                if (mode) {
+                   textObj.set('text', applyMangaCircleLogic(newText, mode));
+                } else {
+                   textObj.set('text', newText);
+                }
+            } else {
+                textObj.visible = false;
+                textObj.text = "";
+                textObj.associatedLineIndex = -1;
+            }
+        });
+        canvas.requestRenderAll(); 
+    }
+    
+    function removeMarker(localIndex) {
+        markersData.splice(localIndex, 1);
+        if (fabricTexts[localIndex]) {
+            canvas.remove(fabricTexts[localIndex]);
+            fabricTexts.splice(localIndex, 1);
+        }
+        saveState();
+        drawUI();
+        syncTextFromGlobalSource();
     }
 
     originalImg.onload = () => {
@@ -556,111 +534,42 @@
         const x = Math.floor((e.clientX - rect.left) * scaleX);
         const y = Math.floor((e.clientY - rect.top) * scaleY);
         
-        // فراخوانی تابع (که الان تغییر کرده)
-        const result = runFloodFill(x, y);
-        
-        const currentIdx = markersData.length;
-        // محاسبه ایندکس سراسری برای پیدا کردن خط درست در متن
-        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
-        const globalIndex = globalOffset + currentIdx;
+        const markerObj = { x: x, y: y, w: 300, h: 300 };
+        markersData.push(markerObj);
 
-        // اینجا هم فیلتر میکنیم تا اگر کاربر چند اینتر زده، متن درست انتخاب شود
-        const lines = textInput.value.split('\n').filter(line => line.trim() !== '');
-        
-        // اگر متنی برای این بالن وجود ندارد، یک خط جدید به تکست باکس اضافه میکنیم
-        if (lines.length <= globalIndex) {
-            // اضافه کردن به خود ولیو اصلی تکست باکس
-            textInput.value += (textInput.value ? "\n" : "");
-        }
-        
-        // دوباره میخوانیم تا متن جدید را بگیریم
-        const updatedLines = textInput.value.split('\n').filter(line => line.trim() !== '');
-        const content = updatedLines[globalIndex] || "";
-        markersData.push(result);
-        
-        const textObj = new fabric.Textbox(content, {
-            left: result.x, top: result.y, fontFamily: 'font', fill: '#000000',
-            fontSize: 40, textAlign: 'center', 
-            width: content.length < 5 ? 80 : Math.max(result.w || 100, 150), 
-            minHeight: 50, direction: 'rtl', 
-            editable: false, 
-            splitByGrapheme: false 
+        const textObj = new fabric.Textbox("", {
+             left: x, top: y, fontFamily: 'font', fill: '#000000',
+             fontSize: 45, textAlign: 'center', 
+             width: 180, minHeight: 50, direction: 'rtl', 
+             editable: false, splitByGrapheme: false,
+             lineHeight: 1.1
         });
         
-        // --- ذخیره متن اصلی (Fix برای مشکل دایره‌ها) ---
-        textObj.originalText = content; 
-
         fabricTexts.push(textObj);
         canvas.add(textObj);
+        canvas.setActiveObject(textObj);
+        syncTextFromGlobalSource();
         drawUI();
     });
 
-    canvas.on('object:modified', (e) => {
-        saveState();
-        if (e.target && e.target.type === 'textbox') {
-            const idx = fabricTexts.indexOf(e.target);
-            if (idx > -1) {
-                // اینجا چون کاربر ممکنه دستی متن رو تغییر بده، ما فعلا دست به ساختار اصلی تکست باکس نمیزنیم
-                // تا ترتیب بهم نریزه، ولی اعمال تغییرات رو انجام میدیم
-                const lines = textInput.value.split('\n'); // اینجا همه خطوط رو میگیریم که ایندکس خراب نشه
-                // اما پیدا کردن ایندکس واقعی بین خطوط پر کمی پیچیده است، پس فعلا ساده نگه میداریم
-                // چون کاربر خواسته فقط "در ورودی" اینتر حساب نشه.
-            }
-        }
-    });
-
-    function runFloodFill(startX, startY) {
-        // --- تغییر: حذف کامل تشخیص هوشمند و جایگزینی با دایره ثابت 300 پیکسلی ---
-        // درخواست: "تشخیص رو حذف کن و فقط یک دایره 300 پیکسلی بذار"
-        // 300 پیکسل قطر = 150 پیکسل شعاع
-        // ساختار بازگشتی آبجکت حفظ شد تا بقیه کد خراب نشود
-        return { 
-            x: startX, 
-            y: startY, 
-            w: 300, // استفاده به عنوان قطر فرضی برای محاسبه عرض متن
-            h: 300, 
-            isCircle: true, 
-            points: [] // نیازی به نقاط نیست چون همیشه دایره است
-        };
-    }
-
-    function shiftTextsAndMarkers() {
-        fabricTexts.forEach((textObj, i) => {
-            if (markersData[i]) {
-                textObj.set({ left: markersData[i].x, top: markersData[i].y });
-                textObj.setCoords();
-            }
-        });
-        canvas.renderAll();
-        drawUI();
-    }
-
-    function removeMarker(index) {
-        saveState();
-        markersData.splice(index, 1);
-        shiftTextsAndMarkers();
-    }
+    canvas.on('object:modified', () => saveState());
 
     function drawUI() {
         document.getElementById('markerOverlay').innerHTML = '';
         if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height);
         
-        // محاسبه افست سراسری برای نمایش عدد درست روی دایره‌ها
-        const globalOffset = getGlobalMarkerOffset(currentPageIdx);
+        if (document.getElementById('originalWrapper').classList.contains('hidden-panel')) return;
+
+        const globalOffset = getPreviousPagesBubbleCount(currentPageIdx);
 
         markersData.forEach((data, i) => {
-            fCtx.fillStyle = "rgba(255, 215, 0, 0.5)";
-            if(data.isCircle) {
-                // --- تغییر: استفاده از شعاع 150 برای دایره 300 پیکسلی ---
-                fCtx.beginPath(); fCtx.arc(data.x, data.y, 150, 0, Math.PI*2); fCtx.fill();
-            } else {
-                data.points.forEach(p => fCtx.fillRect(p[0], p[1], 1, 1));
-            }
+            fCtx.fillStyle = "rgba(255, 215, 0, 0.4)";
+            fCtx.beginPath(); fCtx.arc(data.x, data.y, 80, 0, Math.PI*2); fCtx.fill();
+
             const dot = document.createElement('div');
             dot.className = 'marker';
             dot.style.left = (data.x / originalImg.naturalWidth * 100) + '%';
             dot.style.top = (data.y / originalImg.naturalHeight * 100) + '%';
-            // نمایش شماره به صورت سراسری (ادامه شماره‌های صفحات قبل)
             dot.innerText = globalOffset + i + 1;
             dot.onclick = (e) => { e.stopPropagation(); removeMarker(i); };
             document.getElementById('markerOverlay').appendChild(dot);
@@ -675,16 +584,13 @@
     });
 
     canvasWrapper.addEventListener('mousedown', (e) => {
-        const target = canvas.findTarget(e);
-        if (target) document.getElementById('canvasHost').style.pointerEvents = "auto";
+        if (canvas.findTarget(e)) document.getElementById('canvasHost').style.pointerEvents = "auto";
     }, true);
 
     canvas.on('mouse:down', (opt) => {
-        if (opt.target) {
-            document.getElementById('canvasHost').style.pointerEvents = "auto";
-        } else {
+        if (!opt.target) {
             document.getElementById('canvasHost').style.pointerEvents = "none";
-            canvas.discardActiveObject().renderAll();
+            canvas.discardActiveObject().requestRenderAll();
             menu.style.display = 'none';
         }
     });
@@ -693,46 +599,26 @@
     canvas.on('object:scaling', updateMenuPos);
     canvas.on('selection:cleared', () => menu.style.display = 'none');
     
-    // --- تابع اصلی و جدید اعمال فونت ---
-    // این تابع فایل فونت را دانلود کرده و سپس اعمال می‌کند
     function applyFont(fontName, fileName) { 
         saveState(); 
         const obj = canvas.getActiveObject(); 
         if(!obj || obj.type !== 'textbox') return;
+        if(!fileName) { obj.set('fontFamily', fontName); canvas.requestRenderAll(); return; }
 
-        // اگر نام فایل داده نشده، فرض می‌کنیم فونت لود شده است
-        if(!fileName) {
-            obj.set('fontFamily', fontName);
-            obj.set('dirty', true);
-            canvas.requestRenderAll();
-            return;
-        }
-
-        // ساخت مسیر فایل
         const fontPath = `1/${fileName}`;
-        
-        // تلاش برای لود کردن فونت
         const fontFace = new FontFace(fontName, `url(${fontPath})`);
-        
         fontFace.load().then(loadedFont => {
-            // اضافه کردن فونت به داکیومنت
             document.fonts.add(loadedFont);
-            
-            // اعمال روی آبجکت
             obj.set('fontFamily', fontName);
-            
-            // رندر مجدد با کمی تاخیر برای اطمینان
             obj.set('dirty', true);
             canvas.requestRenderAll();
-            setTimeout(() => canvas.requestRenderAll(), 50);
         }).catch(error => {
-            console.error('Font loading failed:', error);
-            alert('خطا در لود فونت. بررسی کنید فایل ' + fileName + ' در پوشه 1 موجود باشد.');
+            console.error('Font error:', error);
+            obj.set('fontFamily', 'Arial');
         });
     }
     
-    canvas.on('selection:created', (e) => { menu.style.display = 'none'; });
-    canvas.on('selection:updated', (e) => { menu.style.display = 'none'; });
+    canvas.on('selection:created', () => menu.style.display = 'none');
 
     function updateMenuPos() {
         const obj = canvas.getActiveObject(); 
@@ -743,25 +629,20 @@
         const scaleX = rect.width / canvas.width;
         const scaleY = rect.height / canvas.height;
         
-        const menuWidth = 308; // آپدیت شده با سایز جدید
-        // تغییر جزئی برای اطمینان از قرارگیری صحیح با دکمه وسط
-        const leftPos = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuWidth / 2);
-        const topPos = rect.top + (objCoords.top + objCoords.height) * scaleY + 40; // کمی پایین تر
+        const menuW = 280; 
+        let left = rect.left + (objCoords.left + objCoords.width / 2) * scaleX - (menuW / 2);
+        let top = rect.top + (objCoords.top + objCoords.height) * scaleY + 20; 
         
-        menu.style.left = leftPos + 'px';
-        menu.style.top = topPos + 'px';
+        if(left + menuW > window.innerWidth) left = window.innerWidth - menuW - 10;
+        if(left < 0) left = 10;
         
-        if(parseInt(menu.style.left) + menuWidth > window.innerWidth) {
-            menu.style.left = (window.innerWidth - menuWidth - 10) + 'px';
-        }
-        if(parseInt(menu.style.left) < 0) {
-            menu.style.left = '10px';
-        }
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
     }
 
-    function changeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fill', c); canvas.renderAll(); } }
-    function changeStrokeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('stroke', c); canvas.renderAll(); } }
-    function changeStrokeWidth(w) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('strokeWidth', parseFloat(w)); canvas.renderAll(); } }
+    function changeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('fill', c); canvas.requestRenderAll(); } }
+    function changeStrokeColor(c) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('stroke', c); canvas.requestRenderAll(); } }
+    function changeStrokeWidth(w) { saveState(); const o = canvas.getActiveObject(); if(o){ o.set('strokeWidth', parseFloat(w)); canvas.requestRenderAll(); } }
 
     function addNewFont(event) {
         const file = event.target.files[0];
@@ -773,7 +654,7 @@
                 document.fonts.add(loaded);
                 const item = document.createElement('div');
                 item.className = 'style-item';
-                item.innerText = file.name.substring(0,8);
+                item.innerText = file.name.substring(0,6);
                 item.onclick = () => applyFont(fontName);
                 document.getElementById('custom-fonts-list').appendChild(item);
             });
@@ -781,70 +662,104 @@
         reader.readAsDataURL(file);
     }
 
+    // --- تابع جدید دانلود زیپ ---
     document.getElementById('downloadBtn').addEventListener('click', async () => {
-        saveCurrentPageState();
+        const btn = document.getElementById('downloadBtn');
+        const originalBtnText = btn.innerText;
+        btn.disabled = true;
+        
+        saveCurrentPageState(); // ذخیره وضعیت صفحه فعلی قبل از پردازش
+        
+        const zip = new JSZip();
+        const imgFolder = zip.folder("edited_pages");
+        
         for (let i = 0; i < pages.length; i++) {
             const p = pages[i];
             if (!p.cleanSrc) continue;
-            await new Promise(resolve => {
+            
+            btn.innerText = `پردازش صفحه ${i+1}...`;
+
+            await new Promise((resolve, reject) => {
                 const offImg = new Image();
                 offImg.onload = () => {
+                    // ایجاد یک بوم موقت برای ترکیب عکس پس‌زمینه و متن‌ها
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = offImg.naturalWidth;
                     tempCanvas.height = offImg.naturalHeight;
                     const ctx = tempCanvas.getContext('2d');
+                    
+                    // 1. رسم عکس کلین
                     ctx.drawImage(offImg, 0, 0);
+                    
+                    // 2. ساخت بوم فابریک برای رندر کردن متن‌ها
+                    // نکته: ما از یک بوم جداگانه برای متن استفاده می‌کنیم تا شفافیت حفظ شود
+                    // سپس خروجی آن را روی بوم اصلی (ctx) رسم می‌کنیم
                     const tempFabric = new fabric.StaticCanvas(null, { width: tempCanvas.width, height: tempCanvas.height });
+                    
                     tempFabric.loadFromJSON(p.fabricJSON, () => {
+                        tempFabric.renderAll();
+                        
+                        // تبدیل لایه متن به عکس و رسم روی عکس اصلی
+                        const textDataUrl = tempFabric.toDataURL({ format: 'png', multiplier: 1 });
                         const textImg = new Image();
                         textImg.onload = () => {
                             ctx.drawImage(textImg, 0, 0);
-                            const link = document.createElement('a');
-                            link.download = `page_${i+1}.png`;
-                            link.href = tempCanvas.toDataURL('image/png');
-                            link.click();
-                            resolve();
+                            
+                            // تبدیل نتیجه نهایی به Blob برای زیپ
+                            tempCanvas.toBlob((blob) => {
+                                imgFolder.file(`Page-${String(i+1).padStart(2, '0')}.png`, blob);
+                                resolve();
+                            }, 'image/png');
                         };
-                        textImg.src = tempFabric.toDataURL({ multiplier: 1 });
+                        textImg.src = textDataUrl;
                     });
                 };
+                offImg.onerror = reject;
                 offImg.src = p.cleanSrc;
             });
         }
+        
+        btn.innerText = "ساخت فایل زیپ...";
+        
+        zip.generateAsync({type:"blob"}).then(function(content) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = "manga_edited_images.zip";
+            link.click();
+            
+            btn.innerText = originalBtnText;
+            btn.disabled = false;
+        });
     });
 
     function addNewFabricText() {
         saveState();
-        const t = new fabric.Textbox('متن جدید', {
-            left: canvas.width/2, top: canvas.height/2, fontFamily: 'Tahoma', fill: '#000', 
-            fontSize: 50, textAlign: 'center', width: 100, minHeight: 60, direction: 'rtl',
+        const t = new fabric.Textbox('متن', {
+            left: canvas.width/2, top: canvas.height/2, fontFamily: 'font', fill: '#000', 
+            fontSize: 45, textAlign: 'center', width: 150, minHeight: 60, direction: 'rtl',
             editable: false
         });
-        // مقدار اولیه به originalText داده شد
-        t.originalText = 'متن جدید'; 
+        t.originalText = 'متن'; 
         canvas.add(t).setActiveObject(t);
         document.getElementById('canvasHost').style.pointerEvents = "auto";
     }
 
     let isFocusMode = false;
-
     document.getElementById('focusModeBtn').addEventListener('click', () => {
         isFocusMode = !isFocusMode;
         document.body.classList.toggle('focus-active');
         const originalWrapper = document.getElementById('originalWrapper');
         const focusBtn = document.getElementById('focusModeBtn');
         if (isFocusMode) {
-            focusBtn.innerText = "خروج از تمرکز";
+            focusBtn.innerText = "خروج";
             focusBtn.style.background = "#007bff";
             originalWrapper.style.display = 'none'; 
             if(fCtx) fCtx.clearRect(0, 0, floodCanvas.width, floodCanvas.height); 
         } else {
-            focusBtn.innerText = "حالت تمرکز (سرعت بالا)";
+            focusBtn.innerText = "تمرکز";
             focusBtn.style.background = "#000";
             originalWrapper.style.display = 'block';
             drawUI(); 
-            canvas.setZoom(1);
-            canvas.absolutePan({ x: 0, y: 0 });
         }
     });
 
@@ -872,26 +787,25 @@
         updateLineCircles();
     }
 
+    // --- تابع جدید اعمال مود دایره‌ای ---
     function setLineMode(num) {
         const obj = canvas.getActiveObject();
         if(!obj || obj.type !== 'textbox') return;
+        
         saveState();
         
-        // --- تغییر اساسی: استفاده از متن ذخیره شده (originalText) برای جلوگیری از باگ تغییر متن ---
-        // اگر originalText موجود نبود، از متن فعلی استفاده کن و کاراکترهای اضافی را پاک کن
+        // استفاده از متن ذخیره شده برای جلوگیری از بهم ریختگی هنگام تغییر حالت
         let baseText = obj.originalText || obj.text.replace(/ـ/g, '').replace(/\n/g, ' ');
 
         if (obj.circleMode === num) {
             obj.circleMode = null;
-            // وقتی دایره خاموش میشه، متن اصلی رو برگردون
             obj.set('text', baseText);
         } else {
             obj.circleMode = num;
-            // وقتی دایره روشن میشه، تابع رو روی متن اصلی اعمال کن
             obj.set('text', applyMangaCircleLogic(baseText, num));
         }
         
-        canvas.renderAll();
+        canvas.requestRenderAll();
         updateLineCircles();
     }
 
@@ -920,15 +834,22 @@
         const scaleX = rect.width / canvas.width;
         const scaleY = rect.height / canvas.height;
         
-        lineSelector.style.left = (rect.left + (objCoords.left + objCoords.width/2) * scaleX - 80) + 'px';
-        lineSelector.style.top = (rect.top + objCoords.top * scaleY - 50) + 'px';
+        lineSelector.style.left = (rect.left + (objCoords.left + objCoords.width/2) * scaleX - 70) + 'px';
+        lineSelector.style.top = (rect.top + objCoords.top * scaleY - 45) + 'px';
     }
 
+    // --- تابع جدید و پیشرفته منطق دایره‌ای با پشتیبانی از کشیدگی (تطویل) ---
     function applyMangaCircleLogic(rawText, lineCount) {
         const basePatterns = {
-            2: [2, 5], 3: [3, 6, 3], 4: [3, 6, 6, 3], 5: [3, 6, 8, 6, 3],
-            6: [3, 6, 8, 8, 6, 3], 7: [3, 6, 8, 10, 8, 6, 3], 8: [3, 6, 8, 10, 10, 8, 6, 3],
-            9: [3, 6, 8, 10, 12, 10, 8, 6, 3], 10: [3, 6, 8, 10, 12, 12, 10, 8, 6, 3]
+            2: [2, 5], 
+            3: [2, 6, 2], 
+            4: [3, 6, 6, 3], 
+            5: [3, 6, 8, 6, 3],
+            6: [3, 6, 8, 8, 6, 3], 
+            7: [3, 6, 8, 10, 8, 6, 3], 
+            8: [3, 6, 8, 10, 10, 8, 6, 3],
+            9: [3, 6, 8, 10, 12, 10, 8, 6, 3], 
+            10: [3, 6, 8, 10, 12, 12, 10, 8, 6, 3]
         };
         const cannotConnectLeft = "ادذرزژوآء"; 
         const punctuation = " .،!؟:؛-()\"";
@@ -977,4 +898,4 @@
     }
 </script>
 </body>
-</html>
+            </html>
