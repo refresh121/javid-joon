@@ -141,6 +141,19 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
+// این بخش در سرور اجرا می‌شود و کاربر آن را نمی‌بیند
+app.post('/process-text', (req, res) => {
+    if (!req.session.user) return res.status(403).send("عدم دسترسی");
+
+    let text = req.body.text;
+    
+    // --- اینجا همان کدهای حساس شما قرار می‌گیرد ---
+    // مثلاً تابعی که حروف را می‌کشد یا متن را تراز می‌کند
+    let processedText = text.split('').join('ـ'); // یک مثال ساده از پردازش
+    
+    res.json({ result: processedText });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
